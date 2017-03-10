@@ -32,6 +32,8 @@ class VandalStatsProcessor:
                tm: datetime.datetime,
                is_vandal: bool):
         try:
+            if (ip is None):
+                return # CHECK THIS CASE
             info = self.geoip.city(ip)
             country_code = info.country.iso_code
             if country_code is None:

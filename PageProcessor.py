@@ -1,5 +1,5 @@
 from FlaggedRevs import FlaggedRevs
-from FlaggedUsers import FlaggedUsers
+from UserFlags import UserFlags
 from mw.xml_dump.iteration.page import Page
 from mw.xml_dump.iteration.revision import Revision
 from mw.xml_dump.iteration.contributor import Contributor
@@ -7,23 +7,66 @@ from RevisionTools import RevisionTools
 from pymongo import database
 import VandalStatsProcessor
 
+# not all but just enough
+TRUSTED_GROUPS = ['editor', 'autoeditor', 'rollbacker', 'reviewer', 'sysop', 'bureaucrat']
+TAKE_REVISIONS = 20
 
 class PageProcessor:
     def __init__(self,
                  flagged_pages: FlaggedRevs,
-                 flagged_users: FlaggedUsers,
+                 user_flags: UserFlags,
                  db: database,
                  geoip):
         self.flagged_revs = flagged_pages
-        self.flagged_users = flagged_users
-        self.db = db
+        self.user_flags = user_flags
+        self.db = db.items
+        self.tosave = []
         self.vandal = VandalStatsProcessor.VandalStatsProcessor(db, geoip)
 
     def process(self, page: Page):
         revs = list(page)  # type: list[Revision]
+        self.set_reverted_and_cancelled(revs)
 
+        for index, rev in enumerate(revs):
+            flags = self.user_flags.get_flags(rev.contributor.id) or []
+            if 'bot' in flags:
+                continue  # ignore bots
+
+            if self.is_trusted(flags) or \
+                    (rev.cancelled_by is None and rev.reverted_by is None):
+                self.record_normal_statistics(rev)
+                continue # TODO: capture normal revisions as well
+            else:
+                self.record_vandal_statistics(rev)
+
+            if rev.reverted_by is None:
+                continue  # interested in reverts only
+
+            #if rev.timestamp.year != 2016:
+            #    continue  # not interested in other years
+            obj = self.make_db_object(revs[max(0,index-TAKE_REVISIONS):(1+index)])
+            print(obj)
+
+        # memory cleanup
+        for rev in revs:
+            rev.reverted_by = None
+
+
+        # del revs
+        return len(revs)
+
+    def make_db_object(self, revisions: [Revision]):
+        return [
+            {
+                "id": x.id,
+                "timestamp": x.timestamp,
+                "comment" : x.comment
+            }
+            for x in revisions
+        ]
+
+    def set_reverted_and_cancelled(self, revs):
         # TODO: prevent edit wars
-
         # prev = None
         for index, revision in enumerate(revs):
             #   revision.prev = prev
@@ -42,7 +85,7 @@ class PageProcessor:
                 break
 
             reverting = RevisionTools.is_reverting(revision.comment)
-            if reverting:
+            if reverting and revision.contributor.id is not None:
                 reverted = None
                 for x in range(index - 1, 0, -1):
                     if reverted is None:
@@ -55,36 +98,6 @@ class PageProcessor:
                     revs[x].reverted_by = revision.id
                 break
 
-        for rev in revs:  # type: Revision
-            flags = []  # get sw
-            if 'bot' in flags:
-                continue
-
-            if not self.is_trusted(rev) and \
-                    (rev.cancelled_by is not None or rev.reverted_by is not None):
-                self.record_vandal_statistics(rev)
-            else:
-                self.record_normal_statistics(rev)
-                continue
-
-            if rev.reverted_by is None or rev.timestamp:
-                continue  # interested in reverts only
-
-            if rev.timestamp.year != 2016:
-                continue # not interested in other years
-
-
-
-
-
-        # memory cleanup
-        for rev in revs:
-            rev.reverted_by = None
-
-
-        # del revs
-        return len(revs)
-
     def record_normal_statistics(self, rev: Revision):
         if rev.contributor.id is None:
             self.vandal.add_ip(rev.contributor.user_text, rev.timestamp, False)
@@ -96,13 +109,10 @@ class PageProcessor:
         self.vandal.add_ip(rev.contributor.user_text, rev.timestamp, True)
         return
 
-    def is_trusted(self, rev: Revision):
-        if self.flagged_revs.exists(rev.id):
-            return True
-        user = rev.contributor  # type: Contributor
-        if user.id is None:
-            return False
-        return self.flagged_users.is_flagged(user.id)
+    @staticmethod
+    def is_trusted(flags: list):
+        return not set(flags).isdisjoint(TRUSTED_GROUPS)
+
 
     def save(self):
         self.vandal.save()

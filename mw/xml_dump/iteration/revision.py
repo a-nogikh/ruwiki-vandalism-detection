@@ -1,7 +1,9 @@
 from ...types import serializable, Timestamp
 from .contributor import Contributor
+#import pyximport; pyximport.install()
 from .util import consume_tags
 import datetime
+import mw.xml_dump.element_iterator
 
 
 class Revision(serializable.Type):

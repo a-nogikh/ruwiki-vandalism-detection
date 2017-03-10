@@ -2,12 +2,11 @@ from bitarray import bitarray
 import glob
 import pickle
 
-
 class FlaggedRevs:
-    def __init__(self):
+    def __init__(self, mask):
         self.bits = bitarray(100000000)  # 100 mln
         self.bits.setall(False)
-        for file in glob.glob('E:\\diploma\\flgs\\*.txt'):
+        for file in glob.glob(mask):
             print(file)
             f = open(file)
             buffer = ""

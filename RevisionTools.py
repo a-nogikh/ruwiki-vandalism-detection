@@ -14,7 +14,7 @@ class RevisionTools:
         if comment is None:
             return None
 
-        if not [x for x in CANCEL_STRINGS if x in comment]:
+        if not any(x in comment for x in CANCEL_STRINGS):
             return None
 
         nums = [int(s) for s in comment.split() if s.isdigit()]
@@ -24,4 +24,4 @@ class RevisionTools:
     def is_reverting(comment):
         if comment is None:
             return None
-        return [x for x in REVERT_STRINGS if x in comment]
+        return any(x in comment for x in REVERT_STRINGS)
