@@ -24,17 +24,23 @@ users = UserFlagsTools.load(os.environ['USER_FLAGS'])
 
 d1 = dt.datetime.now()
 pp = PageProcessor(flagged, users, db, geoip)
-cnt = 0
+pp.clear()
+
+cnt = 0; totalcnt = 0
 rcnt = 0
 #pr = cProfile.Profile()
 #pr.enable()
 dump = Iterator.from_file(open_file(os.environ['REVISION_SOURCE']))
 for page in dump:
-    if (page.namespace != 0): continue
+    totalcnt += 1
+    if totalcnt % 30 == 0:
+        print(str(rcnt) + "/" + str(cnt) + "/" + str(totalcnt))
+
+    if page.namespace != 0 and page.namespace != 10: continue
     # check page namespace
     rcnt+=pp.process(page)
     cnt += 1
-    if cnt >= 20:
+    if cnt >= 1000:
         break
 
 pp.save()

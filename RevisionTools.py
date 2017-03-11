@@ -1,3 +1,4 @@
+import re
 
 REVERT_STRINGS = [
     "откат]]", "]] Откат", ") откачены к версии"
@@ -6,6 +7,8 @@ REVERT_STRINGS = [
 CANCEL_STRINGS = [
     "|отмена]]", "]] Отмена", "Отмена правки "
 ]
+
+find_numbers = re.compile('(\d+)')
 
 
 class RevisionTools:
@@ -17,8 +20,10 @@ class RevisionTools:
         if not any(x in comment for x in CANCEL_STRINGS):
             return None
 
-        nums = [int(s) for s in comment.split() if s.isdigit()]
-        return nums[0]
+        lst = find_numbers.search(comment)
+        if lst is None:
+            return None
+        return int(lst.group(0))
 
     @staticmethod
     def is_reverting(comment):
