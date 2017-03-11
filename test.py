@@ -7,7 +7,7 @@ from FlaggedRevs import FlaggedTools, FlaggedRevs
 from UserFlags import UserFlags, UserFlagsTools
 import geoip2.database
 import maxminddb
-import os
+import os, re
 from dotenv import load_dotenv, find_dotenv
 import statprof, cProfile, pstats, io
 
@@ -36,11 +36,13 @@ for page in dump:
     if totalcnt % 30 == 0:
         print(str(rcnt) + "/" + str(cnt) + "/" + str(totalcnt))
 
-    if page.namespace != 0 and page.namespace != 10: continue
+    #if page.namespace != 0 and page.namespace != 10: continue
+    excl = page.namespace != 0 and page.namespace != 10
+    if not excl:
+        cnt += 1
     # check page namespace
-    rcnt+=pp.process(page)
-    cnt += 1
-    if cnt >= 100:
+    rcnt+= pp.process(page, excl)
+    if cnt >= 20:
         break
 
 pp.save()

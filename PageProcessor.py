@@ -5,12 +5,15 @@ from mw.xml_dump.iteration.revision import Revision
 from mw.xml_dump.iteration.contributor import Contributor
 from RevisionTools import RevisionTools
 from pymongo import database, collection
+import random
 import VandalStatsProcessor
 
 # not all but just enough
 TRUSTED_GROUPS = ['editor', 'autoeditor', 'rollbacker', 'reviewer', 'sysop', 'bureaucrat']
+# number of revisions to save in a database
 TAKE_REVISIONS = 50
-
+# to keep the size of the data set reasonably small
+TAKE_ONE_GOOD_IN = 6
 
 class PageProcessor:
     def __init__(self,
@@ -22,44 +25,65 @@ class PageProcessor:
         self.user_flags = user_flags
         self.db = db.items # type: collection.Collection
         self.to_save = []
+        self.ok_cnt = [0,0]
         self.vandal = VandalStatsProcessor.VandalStatsProcessor(db, geoip)
 
-    def process(self, page: Page):
+    def process(self, page: Page, excl):
         revs = list(page)  # type: list[Revision]
+        if excl:
+            return len(revs)
+
         self.set_reverted_and_cancelled(revs)
 
         last_trusted = None
         last_flagged = None
+        prev_last_flagged = None
+        prev_last_trusted = None
 
         for index, rev in enumerate(revs):
             flags = self.user_flags.get_flags(rev.contributor.id) or []
 
             is_trusted_user = self.is_trusted(flags)
             is_flagged_rev = self.flagged_revs.exists(rev.id)
+            prev_last_flagged = last_flagged
+
             if is_flagged_rev:
                 last_flagged = rev
 
             is_trusted_rev = is_flagged_rev or is_trusted_user
+            prev_last_trusted = last_trusted
             if is_trusted_rev:
                 last_trusted = rev
 
             if 'bot' in flags:
                 continue  # ignore bots
 
+            rev_vandal = False
             if is_trusted_rev or \
                     (rev.cancelled_by is None and rev.reverted_by is None):
                 self.record_normal_statistics(rev)
-                continue  # TODO: capture normal revisions as well
+
+                if not is_trusted_rev:
+                    continue
             else:
                 self.record_vandal_statistics(rev)
+                rev_vandal = True
 
-            if rev.reverted_by is None or rev.reverts_till is not None or rev.cancels is not None:
-                continue  # interested in reverts only
+                if rev.reverted_by is None:
+                    continue # reverted
+
+            if rev.reverts_till is not None or rev.cancels is not None:
+                continue  # not interested in reverts and cancels
 
             if rev.timestamp.year != 2016:
                 continue  # not interested in other years
 
+            if not rev_vandal:
+                if random.randrange(TAKE_ONE_GOOD_IN) != 0:
+                    continue  # to keep list of good revs reasonably small
+
             revs_list = revs[max(0, index - TAKE_REVISIONS):(1 + index)]
+            self.ok_cnt[0 if rev_vandal else 1] += 1
             obj = {
                 "page": {
                     "id": page.id,
@@ -67,12 +91,13 @@ class PageProcessor:
                     "ns": page.namespace
                 },
                 "revs": self.make_db_object(revs_list),
-                "last_flagged": self.make_db_object([last_flagged])[0] if last_flagged is not None else None,
-                "vandal": 1
+                "last_flagged": self.make_db_object([prev_last_flagged])[0] if prev_last_flagged is not None else None,
+                "vandal": rev_vandal
             }
-            if last_trusted is not None and \
-                    last_trusted.id in {x.id for x in revs_list}:
-                obj["last_trusted"] = last_trusted.id
+
+            if prev_last_trusted is not None:
+                if prev_last_trusted.id in {x.id for x in revs_list}:
+                    obj["last_trusted"] = prev_last_trusted.id
 
             self.to_save.append(obj)
             if len(self.to_save) >= 100:
