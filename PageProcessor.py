@@ -5,6 +5,7 @@ from mw.xml_dump.iteration.revision import Revision
 from mw.xml_dump.iteration.contributor import Contributor
 from RevisionTools import RevisionTools
 from pymongo import database, collection
+from datetime import datetime, timedelta
 import random
 import VandalStatsProcessor
 
@@ -40,6 +41,9 @@ class PageProcessor:
         prev_last_flagged = None
         prev_last_trusted = None
 
+        session_start = None # type: Revision
+        allowed_delta = timedelta(hours=3)
+
         for index, rev in enumerate(revs):
             flags = self.user_flags.get_flags(rev.contributor.id) or []
 
@@ -54,6 +58,11 @@ class PageProcessor:
             prev_last_trusted = last_trusted
             if is_trusted_rev:
                 last_trusted = rev
+
+            if session_start is None or \
+                    session_start.contributor.user_text != rev.contributor.user_text or \
+                    (rev.timestamp - session_start.timestamp) >= allowed_delta:
+                session_start = rev
 
             if 'bot' in flags:
                 continue  # ignore bots
@@ -92,6 +101,8 @@ class PageProcessor:
                 },
                 "revs": self.make_db_object(revs_list),
                 "last_flagged": self.make_db_object([prev_last_flagged])[0] if prev_last_flagged is not None else None,
+                "last_trusted": None,
+                "session_start": session_start.id,
                 "vandal": rev_vandal
             }
 
