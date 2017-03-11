@@ -12,11 +12,12 @@ class VandalStatsProcessor:
                  db: database,
                  geoip: geoip2.database.Reader
                  ):
-        self.collection = db.stats # type: collection.Collection
+        self.collection = db.stats  # type: collection.Collection
         self.geoip = geoip
         countries = [x.alpha_2 for x in list(pycountry.countries)]
         self.data = dict(
             (x, {'total': [0] * 24, 'vandal': [0] * 24, 'unknown_total': 0, 'unknown_vandal': 0}) for x in countries)
+        self.users = {'total': [0] * 24, 'vandal': [0] * 24}
 
     @staticmethod
     def get_tz(tz_string: str) -> timezone:
@@ -27,13 +28,21 @@ class VandalStatsProcessor:
 
         return tz
 
+    def add_user(self, tm: datetime.datetime, is_vandal: bool):
+        if tm is None:
+            return
+
+        self.users['total'][tm.hour] += 1
+        self.users['vandal'][tm.hour] += 1 if is_vandal else 0
+
     def add_ip(self,
                ip: str,
                tm: datetime.datetime,
                is_vandal: bool):
         try:
-            if (ip is None):
-                return # CHECK THIS CASE
+            if ip is None:
+                return  # CHECK THIS CASE
+
             info = self.geoip.city(ip)
             country_code = info.country.iso_code
             if country_code is None:
@@ -57,4 +66,4 @@ class VandalStatsProcessor:
 
     def save(self):
         self.collection.delete_many({})
-        self.collection.insert_one({'data': self.data})
+        self.collection.insert_one({'guest': self.data, 'users': self.users})

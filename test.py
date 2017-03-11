@@ -40,7 +40,7 @@ for page in dump:
     # check page namespace
     rcnt+=pp.process(page)
     cnt += 1
-    if cnt >= 1000:
+    if cnt >= 100:
         break
 
 pp.save()

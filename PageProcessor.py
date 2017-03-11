@@ -53,7 +53,7 @@ class PageProcessor:
             else:
                 self.record_vandal_statistics(rev)
 
-            if rev.reverted_by is None:
+            if rev.reverted_by is None or rev.reverts_till is not None or rev.cancels is not None:
                 continue  # interested in reverts only
 
             if rev.timestamp.year != 2016:
@@ -104,21 +104,20 @@ class PageProcessor:
             ]
 
     def set_reverted_and_cancelled(self, revs):
-        # TODO: prevent edit wars
-        # prev = None
+        # TODO: consider edit wars
         for index, revision in enumerate(revs):
-            #   revision.prev = prev
-            #   if prev is not None:
-            #       prev.next = revision
-
-            #   prev = revision
+            current_user_text = revision.contributor.user_text
             cancels = RevisionTools.cancels_id(revision.comment)
             if cancels is not None:
                 for x in range(index - 1, max(index - 20, 0), -1):
                     if revs[x].id == cancels:
+
+                        # in case of cancelling one's own revs
+                        if revs[x].contributor.user_text == current_user_text:
+                            break
+
                         revision.cancels = revs[x]
                         revs[x].cancelled_by = revision.id
-
                         break
 
             reverting = RevisionTools.is_reverting(revision.comment)
@@ -128,7 +127,11 @@ class PageProcessor:
                     if reverted is None:
                         reverted = revs[x]
 
-                    if revs[x].contributor.user_text != reverted.contributor.user_text:
+                    curr_contributor = revs[x].contributor.user_text
+                    if curr_contributor == current_user_text:
+                        break # reverting oneself
+
+                    if curr_contributor != reverted.contributor.user_text:
                         revision.reverts_till = revs[x].id
                         break
 
@@ -137,13 +140,14 @@ class PageProcessor:
     def record_normal_statistics(self, rev: Revision):
         if rev.contributor.id is None:
             self.vandal.add_ip(rev.contributor.user_text, rev.timestamp, False)
+        else:
+            self.vandal.add_user(rev.timestamp, False)
 
     def record_vandal_statistics(self, rev: Revision):
-        if rev.contributor.id is not None:
-            return
-
-        self.vandal.add_ip(rev.contributor.user_text, rev.timestamp, True)
-        return
+        if rev.contributor.id is None:
+            self.vandal.add_ip(rev.contributor.user_text, rev.timestamp, True)
+        else:
+            self.vandal.add_user(rev.timestamp, True)
 
     @staticmethod
     def is_trusted(flags: list):

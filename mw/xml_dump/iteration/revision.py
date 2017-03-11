@@ -10,7 +10,8 @@ class Revision(serializable.Type):
     """
     Revision meta data.
     """
-    __slots__ = ('id', 'timestamp', 'contributor', 'minor', 'comment')
+    __slots__ = ('id', 'timestamp', 'contributor', 'minor', 'comment',
+                 'reverted_by', 'reverts_till', 'cancelled_by', 'cancels')
 
     TAG_MAP = {
         'id': lambda e: int(e.text),
@@ -60,8 +61,6 @@ class Revision(serializable.Type):
         self.reverts_till = None
         self.cancelled_by = None
         self.cancels = None
-        self.next = None
-        self.prev = None
 
     @classmethod
     def from_element(cls, element):
