@@ -47,6 +47,8 @@ for page in dump:
     if cnt >= 500:
         break
 
+    del page
+
 pp.save()
 d2 = dt.datetime.now()
 

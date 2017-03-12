@@ -28,6 +28,13 @@ class VandalStatsProcessor:
                 'days_vandal': [0] * 7
             }) for x in countries)
 
+        self.errors = {
+            'no_country': {
+                'vandal': 0,
+                'total': 0
+            }
+        }
+
         self.users = {
             'total': [0] * 24,
             'vandal': [0] * 24,
@@ -84,7 +91,11 @@ class VandalStatsProcessor:
 
             info = self.geoip.city(ip)
             country_code = info.country.iso_code
-            if country_code is None:
+            vandal = 1 if is_vandal else 0
+
+            if country_code is None or country_code not in self.data:
+                self.errors['no_country']['vandal'] += vandal
+                self.errors['no_country']['total'] += vandal
                 return
 
             tz_string = info.location.time_zone
@@ -92,8 +103,6 @@ class VandalStatsProcessor:
             tz = None
             if tz_string is not None:
                 tz = self.get_tz(tz_string)
-
-            vandal = 1 if is_vandal else 0
 
             if tz is None:
                 self.data[country_code]['unknown_total'] += 1

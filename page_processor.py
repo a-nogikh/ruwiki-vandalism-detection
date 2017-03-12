@@ -16,6 +16,7 @@ TAKE_REVISIONS = 50
 # to keep the size of the data set reasonably small
 TAKE_ONE_GOOD_IN = 6
 
+
 class PageProcessor:
     def __init__(self,
                  flagged_pages: FlaggedRevs,
@@ -24,15 +25,17 @@ class PageProcessor:
                  geoip):
         self.flagged_revs = flagged_pages
         self.user_flags = user_flags
-        self.db = db.items # type: collection.Collection
+        self.db = db.items  # type: collection.Collection
         self.to_save = []
-        self.ok_cnt = [0,0]
+        self.ok_cnt = [0, 0]
         self.vandal = vandal_stats_processor.VandalStatsProcessor(db, geoip)
 
     def process(self, page: Page, excl):
         revs = list(page)  # type: list[Revision]
+        revs_len = len(revs)
         if excl:
-            return len(revs)
+            del revs
+            return revs_len
 
         self.set_reverted_and_cancelled(revs)
 
@@ -41,7 +44,7 @@ class PageProcessor:
         prev_last_flagged = None
         prev_last_trusted = None
 
-        session_start = None # type: Revision
+        session_start = None  # type: Revision
         allowed_delta = timedelta(hours=3)
 
         for index, rev in enumerate(revs):
@@ -79,7 +82,7 @@ class PageProcessor:
                 rev_vandal = True
 
                 if rev.reverted_by is None:
-                    continue # reverted
+                    continue  # reverted
 
             if rev.reverts_till is not None or rev.cancels is not None:
                 continue  # not interested in reverts and cancels
@@ -118,9 +121,12 @@ class PageProcessor:
         # memory cleanup
         for rev in revs:
             rev.reverted_by = None
+            rev.cancelled_by = None
+            rev.reverts_till = None
+            rev.cancels = None
 
-        # del revs
-        return len(revs)
+        del revs
+        return revs_len
 
     def make_db_object(self, revisions: [Revision]):
         return [
@@ -165,7 +171,7 @@ class PageProcessor:
 
                     curr_contributor = revs[x].contributor.user_text
                     if curr_contributor == current_user_text:
-                        break # reverting oneself
+                        break  # reverting oneself
 
                     if curr_contributor != reverted.contributor.user_text:
                         revision.reverts_till = revs[x].id
@@ -187,14 +193,13 @@ class PageProcessor:
             self.vandal.add_user(rev.timestamp, True)
 
         if rev.reverted_by is not None:
-            reverter = rev.reverted_by  #type: Revision
+            reverter = rev.reverted_by  # type: Revision
             if reverter.reverts_last.id == rev.id:
                 self.vandal.add_time_diff(False, rev.timestamp, reverter.timestamp)
 
         if rev.cancelled_by is not None:
-            canceller = rev.cancelled_by  #type: Revision
+            canceller = rev.cancelled_by  # type: Revision
             self.vandal.add_time_diff(True, rev.timestamp, canceller.timestamp)
-
 
     @staticmethod
     def is_trusted(flags: list):
