@@ -1,13 +1,13 @@
-from FlaggedRevs import FlaggedRevs
-from UserFlags import UserFlags
+from flagged_revs import FlaggedRevs
+from user_flags import UserFlags
 from mw.xml_dump.iteration.page import Page
 from mw.xml_dump.iteration.revision import Revision
 from mw.xml_dump.iteration.contributor import Contributor
-from RevisionTools import RevisionTools
+from revision_tools import RevisionTools
 from pymongo import database, collection
 from datetime import datetime, timedelta
 import random
-import VandalStatsProcessor
+import vandal_stats_processor
 
 # not all but just enough
 TRUSTED_GROUPS = ['editor', 'autoeditor', 'rollbacker', 'reviewer', 'sysop', 'bureaucrat']
@@ -27,7 +27,7 @@ class PageProcessor:
         self.db = db.items # type: collection.Collection
         self.to_save = []
         self.ok_cnt = [0,0]
-        self.vandal = VandalStatsProcessor.VandalStatsProcessor(db, geoip)
+        self.vandal = vandal_stats_processor.VandalStatsProcessor(db, geoip)
 
     def process(self, page: Page, excl):
         revs = list(page)  # type: list[Revision]
@@ -153,7 +153,7 @@ class PageProcessor:
                             break
 
                         revision.cancels = revs[x]
-                        revs[x].cancelled_by = revision.id
+                        revs[x].cancelled_by = revision
                         break
 
             reverting = RevisionTools.is_reverting(revision.comment)
@@ -171,7 +171,8 @@ class PageProcessor:
                         revision.reverts_till = revs[x].id
                         break
 
-                    revs[x].reverted_by = revision.id
+                    revs[x].reverted_by = revision
+                    revision.reverts_last = revs[x]
 
     def record_normal_statistics(self, rev: Revision):
         if rev.contributor.id is None:
@@ -184,6 +185,16 @@ class PageProcessor:
             self.vandal.add_ip(rev.contributor.user_text, rev.timestamp, True)
         else:
             self.vandal.add_user(rev.timestamp, True)
+
+        if rev.reverted_by is not None:
+            reverter = rev.reverted_by  #type: Revision
+            if reverter.reverts_last.id == rev.id:
+                self.vandal.add_time_diff(False, rev.timestamp, reverter.timestamp)
+
+        if rev.cancelled_by is not None:
+            canceller = rev.cancelled_by  #type: Revision
+            self.vandal.add_time_diff(True, rev.timestamp, canceller.timestamp)
+
 
     @staticmethod
     def is_trusted(flags: list):

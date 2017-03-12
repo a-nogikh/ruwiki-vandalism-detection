@@ -11,7 +11,7 @@ class Revision(serializable.Type):
     Revision meta data.
     """
     __slots__ = ('id', 'timestamp', 'contributor', 'minor', 'comment',
-                 'reverted_by', 'reverts_till', 'cancelled_by', 'cancels')
+                 'reverted_by', 'reverts_till', 'cancelled_by', 'cancels', 'reverts_last')
 
     TAG_MAP = {
         'id': lambda e: int(e.text),
@@ -59,6 +59,7 @@ class Revision(serializable.Type):
 
         self.reverted_by = None
         self.reverts_till = None
+        self.reverts_last = None
         self.cancelled_by = None
         self.cancels = None
 

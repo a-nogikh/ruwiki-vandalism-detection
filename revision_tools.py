@@ -23,6 +23,7 @@ class RevisionTools:
         lst = find_numbers.search(comment)
         if lst is None:
             return None
+
         return int(lst.group(0))
 
     @staticmethod

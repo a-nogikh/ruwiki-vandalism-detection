@@ -1,17 +1,18 @@
 from mw.xml_dump import Iterator
 from mw.xml_dump.functions import open_file
 import datetime as dt
-from PageProcessor import PageProcessor
+from page_processor import PageProcessor
 from pymongo import MongoClient
-from FlaggedRevs import FlaggedTools, FlaggedRevs
-from UserFlags import UserFlags, UserFlagsTools
+from flagged_revs import FlaggedTools, FlaggedRevs
+from user_flags import UserFlags, UserFlagsTools
 import geoip2.database
 import maxminddb
-import os, re
+import os, gc
 from dotenv import load_dotenv, find_dotenv
 import statprof, cProfile, pstats, io
 
 load_dotenv(find_dotenv())
+
 
 #################
 client = MongoClient('localhost', 27017)
@@ -33,8 +34,9 @@ rcnt = 0
 dump = Iterator.from_file(open_file(os.environ['REVISION_SOURCE']))
 for page in dump:
     totalcnt += 1
-    if totalcnt % 30 == 0:
+    if totalcnt % 40 == 0:
         print(str(rcnt) + "/" + str(cnt) + "/" + str(totalcnt))
+        gc.collect()
 
     #if page.namespace != 0 and page.namespace != 10: continue
     excl = page.namespace != 0 and page.namespace != 10
@@ -42,7 +44,7 @@ for page in dump:
         cnt += 1
     # check page namespace
     rcnt+= pp.process(page, excl)
-    if cnt >= 20:
+    if cnt >= 500:
         break
 
 pp.save()
