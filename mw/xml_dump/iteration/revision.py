@@ -5,21 +5,22 @@ from .util import consume_tags
 import datetime
 import mw.xml_dump.element_iterator
 
+TAG_MAP = {
+    'id': lambda e: int(e.text),
+    'timestamp': lambda e: e.text,  # Timestamp(e.text),
+    'contributor': lambda e: Contributor.from_element(e),
+    'minor': lambda e: True,
+    'comment': lambda e: e.text,  # Comment.from_element(e)
+}
 
-class Revision(serializable.Type):
+class Revision():
     """
     Revision meta data.
     """
     __slots__ = ('id', 'timestamp', 'contributor', 'minor', 'comment',
                  'reverted_by', 'reverts_till', 'cancelled_by', 'cancels', 'reverts_last')
 
-    TAG_MAP = {
-        'id': lambda e: int(e.text),
-        'timestamp': lambda e: e.text,#Timestamp(e.text),
-        'contributor': lambda e: Contributor.from_element(e),
-        'minor': lambda e: True,
-        'comment': lambda e: e.text,#Comment.from_element(e)
-    }
+
 
     def __init__(self, id, timestamp, contributor=None, minor=None,
                  comment=None):
@@ -65,13 +66,14 @@ class Revision(serializable.Type):
 
     @classmethod
     def from_element(cls, element):
-        values = consume_tags(cls.TAG_MAP, element)
+        values = consume_tags(TAG_MAP, element)
 
-        return cls(
+        obj = cls(
             values.get('id'),
             values.get('timestamp'),
             values.get('contributor'),
             values.get('minor') is not None,
             values.get('comment'),
-        #    values.get('parentid')
         )
+        element.clear()
+        return obj

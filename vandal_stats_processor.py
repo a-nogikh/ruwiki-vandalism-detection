@@ -6,7 +6,7 @@ from pytz import timezone
 
 tz_cache = dict()
 
-TOTAL_TIMESPAN_LEN = (int)((1440 / 5) * 14)
+TOTAL_TIMESPAN_LEN = (int)((1440 / 5) * 7)
 
 
 class VandalStatsProcessor:
@@ -22,16 +22,16 @@ class VandalStatsProcessor:
             (x, {
                 'total': [0] * 24,
                 'vandal': [0] * 24,
-                'unknown_total': 0,
-                'unknown_vandal': 0,
+                'unknown_total': [0] * 24,
+                'unknown_vandal': [0] * 24,
                 'days_total': [0] * 7,
                 'days_vandal': [0] * 7
             }) for x in countries)
 
         self.errors = {
             'no_country': {
-                'vandal': 0,
-                'total': 0
+                'vandal': [0]*24,
+                'total': [0]*24
             }
         }
 
@@ -85,17 +85,18 @@ class VandalStatsProcessor:
                ip: str,
                tm: datetime.datetime,
                is_vandal: bool):
+
+        vandal = 1 if is_vandal else 0
         try:
             if ip is None or tm is None:
                 return
 
             info = self.geoip.city(ip)
             country_code = info.country.iso_code
-            vandal = 1 if is_vandal else 0
 
             if country_code is None or country_code not in self.data:
-                self.errors['no_country']['vandal'] += vandal
-                self.errors['no_country']['total'] += vandal
+                self.errors['no_country']['vandal'][tm.hour] += vandal
+                self.errors['no_country']['total'][tm.hour] += vandal
                 return
 
             tz_string = info.location.time_zone
@@ -105,8 +106,8 @@ class VandalStatsProcessor:
                 tz = self.get_tz(tz_string)
 
             if tz is None:
-                self.data[country_code]['unknown_total'] += 1
-                self.data[country_code]['unknown_vandal'] += vandal
+                self.data[country_code]['unknown_total'][tm.hour] += 1
+                self.data[country_code]['unknown_vandal'][tm.hour] += vandal
             else:
                 tm_z = tm.astimezone(tz)
                 self.data[country_code]['days_total'][tm_z.weekday()] += 1
@@ -115,12 +116,15 @@ class VandalStatsProcessor:
                 self.data[country_code]['vandal'][tm_z.hour] += vandal
 
         except geoip2.errors.GeoIP2Error:
+            self.errors['no_country']['vandal'][tm.hour] += vandal
+            self.errors['no_country']['total'][tm.hour] += vandal
             return
 
     def save(self):
         self.collection.delete_many({})
         self.collection.insert_one({
             'guest': self.data,
+            'guest_no_country': self.errors['no_country'],
             'users': self.users,
             'till_removed': self.till_removed
         })

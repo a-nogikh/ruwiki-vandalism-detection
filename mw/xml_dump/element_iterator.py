@@ -61,7 +61,6 @@ class ElementIterator:
                 sub_iterator = ElementIterator(element, self.pointer)
 
                 yield sub_iterator
-
                 sub_iterator.clear()
 
         self.done = True

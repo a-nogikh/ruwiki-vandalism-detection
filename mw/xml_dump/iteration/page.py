@@ -5,7 +5,7 @@ from .redirect import Redirect
 from .revision import Revision
 
 
-class Page(serializable.Type):
+class Page():
     """
     Page meta data and a :class:`~mw.xml_dump.Revision` iterator.  Instances of
     this class can be called as iterators directly.  E.g.
@@ -23,7 +23,8 @@ class Page(serializable.Type):
         'title',
         'namespace',
         'redirect',
-        'restrictions'
+        'restrictions',
+        '__revisions'
     )
 
     def __init__(self, id, title, namespace, redirect, restrictions, revisions=None):
@@ -47,7 +48,7 @@ class Page(serializable.Type):
         Page is currently redirect? : :class:`~mw.xml_dump.Redirect` | `None`
         """
 
-        self.restrictions = serializable.List.deserialize(restrictions)
+        self.restrictions = [] #serializable.List.deserialize(restrictions)
         """
         A list of page editing restrictions (empty unless restrictions are specified) : list( `str` )
         """
@@ -61,6 +62,9 @@ class Page(serializable.Type):
     def __next__(self):
         return next(self.__revisions)
 
+    def clear(self):
+        self.__revisions = None
+
     @classmethod
     def load_revisions(cls, first_revision, element):
         yield Revision.from_element(first_revision)
@@ -73,6 +77,10 @@ class Page(serializable.Type):
             else:
                 raise MalformedXML("Expected to see 'revision'.  " +
                                    "Instead saw '{0}'".format(tag))
+
+            sub_element.clear()
+        element.clear()
+
 
     @classmethod
     def from_element(cls, element):

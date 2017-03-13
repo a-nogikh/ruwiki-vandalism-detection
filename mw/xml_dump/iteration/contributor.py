@@ -3,18 +3,19 @@ from ...util import none_or
 
 from .util import consume_tags
 
+TAG_MAP = {
+        'id': lambda e: int(e.text),
+        'username': lambda e: str(e.text),
+        'ip': lambda e: str(e.text)
+}
 
-class Contributor(serializable.Type):
+class Contributor():
     """
     Contributor meta data.
     """
     __slots__ = ('id', 'user_text')
 
-    TAG_MAP = {
-        'id': lambda e: int(e.text),
-        'username': lambda e: str(e.text),
-        'ip': lambda e: str(e.text)
-    }
+
 
     def __init__(self, id, user_text):
         self.id = None or id # none_or(id, int)
@@ -37,7 +38,6 @@ class Contributor(serializable.Type):
 
     @classmethod
     def from_element(cls, element):
-        #values = consume_tags(cls.TAG_MAP, element)
         id = None
         text = None
 
@@ -48,4 +48,5 @@ class Contributor(serializable.Type):
             elif tg == "username" or tg == "ip":
                 text = str(sub_element.text)
 
+        element.clear()
         return cls(id, text)

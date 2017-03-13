@@ -31,12 +31,23 @@ cnt = 0; totalcnt = 0
 rcnt = 0
 #pr = cProfile.Profile()
 #pr.enable()
+
 dump = Iterator.from_file(open_file(os.environ['REVISION_SOURCE']))
+
 for page in dump:
     totalcnt += 1
-    if totalcnt % 40 == 0:
+    if totalcnt % 50 == 0:
         print(str(rcnt) + "/" + str(cnt) + "/" + str(totalcnt))
         gc.collect()
+
+        '''snapshot = tracemalloc.take_snapshot()
+        top_stats = snapshot.compare_to(prevsnap, 'lineno')
+
+        print("[ Top 10 differences ]")
+        for stat in top_stats[:10]:
+            print(stat)
+
+        prevsnap = snapshot'''
 
     #if page.namespace != 0 and page.namespace != 10: continue
     excl = page.namespace != 0 and page.namespace != 10
@@ -47,6 +58,7 @@ for page in dump:
     if cnt >= 500:
         break
 
+    page.clear()
     del page
 
 pp.save()

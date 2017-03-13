@@ -81,8 +81,12 @@ class PageProcessor:
                 self.record_vandal_statistics(rev)
                 rev_vandal = True
 
-                if rev.reverted_by is None:
+                reverter = rev.reverted_by
+                if reverter is None:
                     continue  # reverted
+
+                if reverter.reverted_by is not None or reverter.cancelled_by is not None:
+                    continue # not interested in cancelled/reverted reverts
 
             if rev.reverts_till is not None or rev.cancels is not None:
                 continue  # not interested in reverts and cancels
@@ -116,7 +120,7 @@ class PageProcessor:
             self.to_save.append(obj)
             if len(self.to_save) >= 100:
                 self.db.insert_many(self.to_save)
-                self.to_save = []
+                self.to_save.clear()
 
         # memory cleanup
         for rev in revs:
@@ -208,7 +212,7 @@ class PageProcessor:
     def save(self):
         self.vandal.save()
         self.db.insert_many(self.to_save)
-        self.to_save = []
+        self.to_save.clear()
 
     def clear(self):
         self.db.delete_many({})

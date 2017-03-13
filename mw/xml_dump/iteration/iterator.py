@@ -167,6 +167,8 @@ class Iterator(serializable.Type):
                 assert MalformedXML("Expected to see 'page'.  " +
                                     "Instead saw '{0}'".format(tag))
 
+            sub_element.clear()
+
     @classmethod
     def from_element(cls, element):
 
