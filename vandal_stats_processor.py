@@ -53,6 +53,15 @@ class VandalStatsProcessor:
             }
         }
 
+        obj = self.collection.find_one()
+        if obj is None:
+            return
+
+        self.data = VandalStatsProcessor.merge(self.data,obj['guest'])
+        self.users = VandalStatsProcessor.merge(self.users,obj['users'])
+        self.till_removed = VandalStatsProcessor.merge(self.till_removed,obj['till_removed'])
+        self.errors['no_country'] =VandalStatsProcessor.merge(self.errors['no_country'],obj['guest_no_country'])
+
     @staticmethod
     def get_tz(tz_string: str) -> timezone:
         tz = tz_cache.get(tz_string, None)
@@ -120,11 +129,35 @@ class VandalStatsProcessor:
             self.errors['no_country']['total'][tm.hour] += vandal
             return
 
-    def save(self):
+
+    # http://stackoverflow.com/questions/7204805/dictionaries-of-dictionaries-merge
+    @staticmethod
+    def merge(a, b, path=None):
+        "merges b into a"
+        if path is None: path = []
+        for key in b:
+            if key in a:
+                if isinstance(a[key], dict) and isinstance(b[key], dict):
+                    VandalStatsProcessor.merge(a[key], b[key], path + [str(key)])
+                elif a[key] == b[key]:
+                    pass  # same leaf value
+                else:
+                    a[key] = b[key]
+            else:
+                a[key] = b[key]
+        return a
+
+    def clear(self):
         self.collection.delete_many({})
-        self.collection.insert_one({
+
+    def save(self):
+
+        newobj = {
             'guest': self.data,
             'guest_no_country': self.errors['no_country'],
             'users': self.users,
             'till_removed': self.till_removed
-        })
+        }
+
+        self.collection.delete_many({})
+        self.collection.insert_one(newobj)

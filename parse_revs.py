@@ -7,12 +7,17 @@ from flagged_revs import FlaggedTools, FlaggedRevs
 from user_flags import UserFlags, UserFlagsTools
 import geoip2.database
 import maxminddb
-import os, gc
+import os, gc, sys, utils
 from dotenv import load_dotenv, find_dotenv
 import statprof, cProfile, pstats, io
 
 load_dotenv(find_dotenv())
 
+file_name = sys.argv[1] if len(sys.argv) > 1 else os.environ['REVISION_SOURCE']
+res = utils.query_yes_no("Revision source: " + file_name + "?", "no")
+if not res:
+    print("Exiting..")
+    sys.exit()
 
 #################
 client = MongoClient('localhost', 27017)
@@ -25,14 +30,14 @@ users = UserFlagsTools.load(os.environ['USER_FLAGS'])
 
 d1 = dt.datetime.now()
 pp = PageProcessor(flagged, users, db, geoip)
-pp.clear()
+
 
 cnt = 0; totalcnt = 0
 rcnt = 0
 #pr = cProfile.Profile()
 #pr.enable()
 
-dump = Iterator.from_file(open_file(os.environ['REVISION_SOURCE']))
+dump = Iterator.from_file(open_file(file_name))
 
 for page in dump:
     totalcnt += 1
@@ -40,22 +45,12 @@ for page in dump:
         print(str(rcnt) + "/" + str(cnt) + "/" + str(totalcnt))
         gc.collect()
 
-        '''snapshot = tracemalloc.take_snapshot()
-        top_stats = snapshot.compare_to(prevsnap, 'lineno')
-
-        print("[ Top 10 differences ]")
-        for stat in top_stats[:10]:
-            print(stat)
-
-        prevsnap = snapshot'''
-
-    #if page.namespace != 0 and page.namespace != 10: continue
     excl = page.namespace != 0 and page.namespace != 10
     if not excl:
         cnt += 1
     # check page namespace
     rcnt+= pp.process(page, excl)
-    if cnt >= 500:
+    if cnt >= 10:
         break
 
     page.clear()

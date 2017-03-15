@@ -8,6 +8,7 @@ from pymongo import database, collection
 from datetime import datetime, timedelta
 import random
 import vandal_stats_processor
+from multiprocessing.dummy import Pool as ThreadPool
 
 # not all but just enough
 TRUSTED_GROUPS = ['editor', 'autoeditor', 'rollbacker', 'reviewer', 'sysop', 'bureaucrat']
@@ -211,7 +212,8 @@ class PageProcessor:
 
     def save(self):
         self.vandal.save()
-        self.db.insert_many(self.to_save)
+        if len(self.to_save) > 0:
+            self.db.insert_many(self.to_save)
         self.to_save.clear()
 
     def clear(self):
