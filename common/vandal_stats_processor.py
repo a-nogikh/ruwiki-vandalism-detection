@@ -1,5 +1,4 @@
 from pymongo import database, collection
-from collections import defaultdict
 import pycountry, datetime
 import geoip2.database, geoip2.errors
 from pytz import timezone

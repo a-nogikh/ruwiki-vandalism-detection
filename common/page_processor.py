@@ -1,14 +1,14 @@
+import random
+from datetime import timedelta
+
+from pymongo import database, collection
+
+from common import vandal_stats_processor
+from common.revision_tools import RevisionTools
+from common.user_flags import UserFlags
 from flagged_revs import FlaggedRevs
-from user_flags import UserFlags
 from mw.xml_dump.iteration.page import Page
 from mw.xml_dump.iteration.revision import Revision
-from mw.xml_dump.iteration.contributor import Contributor
-from revision_tools import RevisionTools
-from pymongo import database, collection
-from datetime import datetime, timedelta
-import random
-import vandal_stats_processor
-from multiprocessing.dummy import Pool as ThreadPool
 
 # not all but just enough
 TRUSTED_GROUPS = ['editor', 'autoeditor', 'rollbacker', 'reviewer', 'sysop', 'bureaucrat']

@@ -1,15 +1,19 @@
-from mw.xml_dump import Iterator
-from mw.xml_dump.functions import open_file
 import datetime as dt
-from page_processor import PageProcessor
-from pymongo import MongoClient
-from flagged_revs import FlaggedTools, FlaggedRevs
-from user_flags import UserFlags, UserFlagsTools
+import gc
+import os
+import sys
+
 import geoip2.database
 import maxminddb
-import os, gc, sys, utils
 from dotenv import load_dotenv, find_dotenv
-import statprof, cProfile, pstats, io
+from pymongo import MongoClient
+
+from common import utils
+from common.page_processor import PageProcessor
+from common.user_flags import UserFlagsTools
+from flagged_revs import FlaggedTools
+from mw.xml_dump import Iterator
+from mw.xml_dump.functions import open_file
 
 load_dotenv(find_dotenv())
 
