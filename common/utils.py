@@ -31,3 +31,15 @@ def query_yes_no(question, default="yes"):
         else:
             sys.stdout.write("Please respond with 'yes' or 'no' "
                              "(or 'y' or 'n').\n")
+
+
+def bucket_items(raw, bucket_size):
+    curr_list = []
+    for item in raw:
+        curr_list.append(item)
+        if len(curr_list) >= bucket_size:
+            yield curr_list
+            curr_list = []
+
+    if len(curr_list) > 0:
+        yield curr_list

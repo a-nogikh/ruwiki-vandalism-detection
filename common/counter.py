@@ -9,5 +9,11 @@ class Counter:
         if self.current % self.step == 0:
             self.print()
 
+    def mass_tick(self, cnt):
+        prev = self.current
+        self.current += cnt
+        if int(prev/self.step) != int(self.current /self.step):
+            self.print()
+
     def print(self):
         print(self.current)
