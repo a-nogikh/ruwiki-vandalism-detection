@@ -43,3 +43,14 @@ def bucket_items(raw, bucket_size):
 
     if len(curr_list) > 0:
         yield curr_list
+
+
+def strip_comment(text):
+    if text is None:
+        return ""
+
+    exclude_to = text.rfind("*/")
+    if exclude_to >= 0:
+        return text[exclude_to + 2:].strip()
+    else:
+        return text.strip()

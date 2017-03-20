@@ -1,4 +1,3 @@
-from bson import ObjectId
 from collections import defaultdict
 from dotenv import load_dotenv, find_dotenv
 from pymongo import MongoClient, collection
@@ -66,7 +65,10 @@ for item in bucket_items(generate_raw(items), 100):
 
     str_ids = '|'.join(str(x) for x in ids)
     r = requests.get(
-        'https://ru.wikipedia.org/w/api.php?action=query&format=json&prop=revisions&revids=' + str_ids + '&rvprop=content|ids')
+        'https://ru.wikipedia.org/w/api.php?action=query&format=json&prop=revisions&revids='
+        + str_ids
+        + '&rvprop=content|ids'
+    )
 
     results = generate_answers(r.json())
     for x in results:
@@ -80,5 +82,3 @@ for item in bucket_items(generate_raw(items), 100):
         counter.tick()
 
 counter.print()
-
-# https://ru.wikipedia.org/w/api.php?action=query&prop=revisions&revids=1|2|3&rvprop=content|ids

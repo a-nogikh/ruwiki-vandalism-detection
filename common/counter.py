@@ -1,8 +1,9 @@
 
 class Counter:
-    def __init__(self, step):
+    def __init__(self, step, total=None):
         self.step = step
         self.current = 0
+        self.total = total
 
     def tick(self):
         self.current += 1
@@ -16,4 +17,5 @@ class Counter:
             self.print()
 
     def print(self):
-        print(self.current)
+        total_part = "" if self.total is None else "/"+str(self.total)
+        print(str(self.current) + total_part)
