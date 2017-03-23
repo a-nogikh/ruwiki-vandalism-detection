@@ -6,3 +6,4 @@ pytz
 geoip2
 pycountry
 pymongo
+mwparserfromhell

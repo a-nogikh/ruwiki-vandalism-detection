@@ -3,7 +3,8 @@ class Feature:
     def extract(self, raw):
         raise Exception()
 
-    def revs(self, raw):
+    @staticmethod
+    def revs(raw):
         answer = {
             "current": None,
             "prev_user": None,

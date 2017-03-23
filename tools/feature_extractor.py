@@ -3,6 +3,7 @@ from pymongo import MongoClient, collection
 from common.counter import Counter
 from features import FEATURES_LIST
 
+
 load_dotenv(find_dotenv())
 
 COLLECTION_NAME = 'test_small'
