@@ -38,6 +38,7 @@ for collection_name in TASK:
 # set random field
 seed()
 random_counter = Counter(100)
+print("Randomizing")
 for item in items_collection.find({}, no_cursor_timeout=True):
     items_collection.update_one({'_id': item['_id']}, {
         '$set':{
@@ -75,9 +76,9 @@ def split_generate(vandal_count, non_vandal_count):
 
 print("Splitting items")
 counter = Counter(100, total_count)
-for collection_name, cnts in enumerate(TASK):
+for collection_name in TASK:
     collection = client.wiki[collection_name]
-    for item in split_generate(cnts['vandal'], cnts['good']):
+    for item in split_generate(TASK[collection_name]['vandal'], TASK[collection_name]['good']):
         item["r"] = random()
         del item["_id"]
         collection.insert_one(item)
