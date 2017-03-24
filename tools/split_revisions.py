@@ -11,34 +11,29 @@ load_dotenv(find_dotenv())
 if not query_yes_no("Do you really want to reset collections?"):
     exit()
 
-KEEP_VANDAL = 100
-KEEP_NON_VANDAL = 100
-KEEP_TEST_VANDAL = 100
-KEEP_TEST_NON_VANDAL = 100
-TEST_COLLECTION_NAME = 'test_small'
-TRAIN_COLLECTION_NAME = 'train_small'
+TASK = {
+    'test_small': {
+        'vandal': 100,
+        'good': 100
+    },
+    'train_small': {
+        'vandal': 100,
+        'good': 100
+    }
+}
 
 client = MongoClient('localhost', 27017)
 
 items_collection = client.wiki.items  # type: collection.Collection
-test_collection = client.wiki[TEST_COLLECTION_NAME]  # type: collection.Collection
-train_collection = client.wiki[TRAIN_COLLECTION_NAME] # type: collection.Collection
+total_count = 0
 
-for collection in [test_collection, train_collection]:
+for collection_name in TASK:
+    collection = client.wiki[collection_name]
     collection.delete_many({})
     collection.drop_indexes()
     collection.create_index([("r", pymongo.ASCENDING)])
+    total_count += sum(TASK[collection_name].values())
 
-vandal_items = items_collection.find({'vandal': True}).count()
-not_vandal_items = items_collection.find({'vandal': True}).count()
-
-if (KEEP_VANDAL + KEEP_TEST_VANDAL) > vandal_items:
-    print("Need more vandal items!")
-    exit()
-
-if (KEEP_NON_VANDAL + KEEP_TEST_NON_VANDAL) > not_vandal_items:
-    print("Need more good items!")
-    exit()
 
 # set random field
 seed()
@@ -52,6 +47,8 @@ for item in items_collection.find({}, no_cursor_timeout=True):
     random_counter.tick()
 
 print("Random elements created")
+
+# setting indices
 indices = items_collection.index_information()
 if 'random' not in indices:
     print("Creating index")
@@ -62,30 +59,26 @@ if 'random' not in indices:
         name="random")
     print("Index created")
 
-# getting vandal
-print("Processing vandal:true")
-cnt = 0; vandal_counter = Counter(100)
-for item in items_collection.find({'vandal': True}).sort("r").limit(KEEP_VANDAL + KEEP_TEST_VANDAL):
-    cnt += 1
-    item["r"] = random()
-    del item["_id"]
-    if cnt > KEEP_VANDAL:
-        test_collection.insert_one(item)
-    else:
-        train_collection.insert_one(item)
 
-    vandal_counter.tick()
+vandal_items = items_collection.find({'vandal': True}, no_cursor_timeout=True).sort("r")
+non_vandal_items = items_collection.find({'vandal': False}, no_cursor_timeout=True).sort("r")
 
-# getting good
-print("Processing vandal:false")
-cnt = 0; good_counter = Counter(100)
-for item in items_collection.find({'vandal': True}).sort("r").limit(KEEP_NON_VANDAL + KEEP_TEST_NON_VANDAL):
-    cnt += 1
-    item["r"] = random()
-    del item["_id"]
-    if cnt > KEEP_NON_VANDAL:
-        test_collection.insert_one(item)
-    else:
-        train_collection.insert_one(item)
+# vandal
 
-    good_counter.tick()
+def split_generate(vandal_count, non_vandal_count):
+    for _ in range(vandal_count):
+        yield next(vandal_items)
+
+    for _ in range(non_vandal_count):
+        yield next(non_vandal_items)
+
+
+print("Splitting items")
+counter = Counter(100, total_count)
+for collection_name, cnts in enumerate(TASK):
+    collection = client.wiki[collection_name]
+    for item in split_generate(cnts['vandal'], cnts['good']):
+        item["r"] = random()
+        del item["_id"]
+        collection.insert_one(item)
+        counter.tick()
