@@ -10,6 +10,7 @@ class PartsExtractor:
     def __init__(self):
         self.stemmer_ru = SnowballStemmer("russian", ignore_stopwords=True)
         self.stemmer_en = SnowballStemmer("english", ignore_stopwords=True)
+        self.cache = dict()
 
     def extract_sentences(self, src):
         output = mwparserfromhell.parse(src)
@@ -29,9 +30,13 @@ class PartsExtractor:
 
     def _stem(self, s):
         if len(s) == len(s.encode()): #ascii
-            return self.stemmer_en.stem(s)
+            return s #self.stemmer_en.stem(s)
         else:
-            return self.stemmer_ru.stem(s)
+            if s in self.cache:
+                return self.cache[s]
+
+            self.cache[s] = self.stemmer_ru.stem(s)
+            return self.cache[s]
 
     def extract_words_stemmed(self, sentences):
         for sent in sentences:

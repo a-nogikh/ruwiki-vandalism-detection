@@ -13,12 +13,12 @@ if not query_yes_no("Do you really want to reset collections?"):
 
 TASK = {
     'test_small': {
-        'vandal': 100,
-        'good': 100
+        'vandal': 800,
+        'good': 800
     },
     'train_small': {
-        'vandal': 100,
-        'good': 100
+        'vandal': 8000,
+        'good': 8000
     }
 }
 

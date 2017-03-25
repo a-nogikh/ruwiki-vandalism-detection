@@ -7,7 +7,7 @@ import requests
 
 load_dotenv(find_dotenv())
 
-COLLECTION_NAME = 'test_small'
+COLLECTION_NAME = 'train_small'
 
 client = MongoClient('localhost', 27017)
 raw_collection = client.wiki[COLLECTION_NAME]  # type: collection.Collection
@@ -51,7 +51,7 @@ def generate_raw(query):
 def generate_answers(raw):
     for x in raw['query']['pages'].items():
         for rev in x[1]['revisions']:
-            yield (rev['revid'], rev['*'])
+            yield (rev['revid'], rev['*'] if '*' in rev else None)
 
 
 counter = Counter(100)

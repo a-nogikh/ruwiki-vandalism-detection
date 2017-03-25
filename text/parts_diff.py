@@ -12,8 +12,9 @@ class PartsDiff:
             ans[item] += 1
 
         res = dict()
-        for key, val in enumerate(ans):
+        for key in ans:
+            val = ans[key]
             if val == 0: continue
-            res[key] = val
+            res[key] = 1 if val >= 0 else -1
 
         return res
