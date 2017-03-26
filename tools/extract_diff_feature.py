@@ -4,7 +4,9 @@ from features.feature import Feature
 from text.parts_diff import PartsDiff
 from text.parts_extractor import PartsExtractor
 
-COLLECTION_NAME = 'train_small'
+COLLECTION_NAME = 'test_small'
+
+# TODO: take the later between reviewed and prev.user
 
 client = MongoClient('localhost', 27017)
 raw_collection = client.wiki[COLLECTION_NAME]  # type: collection.Collection
@@ -29,15 +31,15 @@ for raw in raw_collection.find({}):
     sentences_after = extractor.extract_sentences(texts['current']['text'])
 
     diff = PartsDiff.words_sum(
-        extractor.extract_bigrams_stemmed(sentences_before),
-        extractor.extract_bigrams_stemmed(sentences_after)
+        extractor.extract_wordnums(sentences_before),
+        extractor.extract_wordnums(sentences_after)
     )
 
     raw_collection.update_one({
         "_id": raw["_id"]
     }, {
         "$set": {
-            "bigram_stemmed": diff
+            "rwords": diff
         }
     })
 

@@ -67,11 +67,19 @@ non_vandal_items = items_collection.find({'vandal': False}, no_cursor_timeout=Tr
 # vandal
 
 def split_generate(vandal_count, non_vandal_count):
-    for _ in range(vandal_count):
-        yield next(vandal_items)
+    vandal = 0
+    while vandal < vandal_count:
+        raw = next(vandal_items)
+        if "revs" in raw and len(raw["revs"]) > 1:
+            yield raw
+            vandal += 1
 
-    for _ in range(non_vandal_count):
-        yield next(non_vandal_items)
+    non_vandal = 0
+    while non_vandal < non_vandal_count:
+        raw = next(non_vandal_items)
+        if "revs" in raw and len(raw["revs"]) > 1:
+            yield raw
+            non_vandal += 1
 
 
 print("Splitting items")

@@ -25,8 +25,7 @@ for key in features_list:
 
 cnt = Counter(100, raw_collection.count())
 for raw in raw_collection.find({}, no_cursor_timeout = True):
-    if raw["revs"] is None or len(raw["revs"]) == 0:
-        print(raw)  # this should not happen
+    if raw["revs"] is None or len(raw["revs"]) <= 1:
         continue
 
     f = (raw["f"] if "f" in raw else None) or dict()

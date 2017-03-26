@@ -16,7 +16,7 @@ class PartsExtractor:
         output = mwparserfromhell.parse(src)
         for item in output.ifilter_text():  # type: str
             for part in item.split('\n'):
-                trimmed = part.strip().lower()
+                trimmed = part.strip()#.lower()
                 if len(trimmed) <= 1:
                     continue
 
@@ -44,16 +44,16 @@ class PartsExtractor:
             return self.cache[s]
 
     def extract_words_stemmed(self, sentences):
-        for sent in sentences:
-            for word in re.findall('[\w\-]+', sent):
+        for sent in sentences:  # type: str
+            for word in re.findall('[\w\-]+', sent.lower()):
                 stemmed = self._stem(word)
                 if stemmed:
                     yield stemmed
 
     def extract_bigrams(self, sentences):
-        for sent in sentences:
+        for sent in sentences:  # type: str
             prev_word = None
-            for word in re.findall('[\w\-]+', sent):
+            for word in re.findall('[\w\-]+', sent.lower()):
                 yield word
                 if prev_word is not None:
                     yield prev_word + " " + word
@@ -61,9 +61,9 @@ class PartsExtractor:
                 prev_word = word
 
     def extract_bigrams_stemmed(self, sentences):
-        for sent in sentences:
+        for sent in sentences:   # type: str
             prev_word = None
-            for word in re.findall('[\w\-]+', sent):
+            for word in re.findall('[\w\-]+', sent.lower()):
                 stemmed = self._stem(word)
 
                 yield stemmed
