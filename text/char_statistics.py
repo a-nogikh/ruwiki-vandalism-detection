@@ -6,13 +6,16 @@ class CharStatistics:
         res = {
             'num': 0,
             'alpha': 0,
-            'capitalized': 0
+            'capitalized': 0,
+            'latin': 0
         }
         for c in text:
             if c.isalpha():
                 res['alpha'] += 1
                 if c.isupper():
                     res['capitalized'] += 1
+
+                res['latin'] += 1 if ord(c) < 128 else 0
 
             if c.isnumeric():
                 res['num'] += 1

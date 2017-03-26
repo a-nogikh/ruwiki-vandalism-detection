@@ -9,7 +9,8 @@ class TextCharStatistics(Feature):
 
         longest_word = 0
         longest_conseq = 0
-        for word, diff in raw["rwords"]:
+        collection = raw["rwords"] if "rwords" in raw else {}
+        for word, diff in collection.items():
             if diff < 0:
                 continue
 
@@ -24,5 +25,6 @@ class TextCharStatistics(Feature):
             't_cap': sum['capitalized'] / (1 + sum['alpha']),
             't_lgt_w': longest_word,
             't_numalpha': sum['num'] / (1 + sum['alpha'] + sum['num']),
+            't_lat': sum['latin'] / (1 + sum['alpha']),
             't_lgt_cs': longest_conseq
         }

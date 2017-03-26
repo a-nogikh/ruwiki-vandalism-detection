@@ -6,7 +6,7 @@ from features import FEATURES_LIST
 
 load_dotenv(find_dotenv())
 
-COLLECTION_NAME = 'test_small'
+COLLECTION_NAME = 'train_small'
 REQUIRED_FEATURES = ['*']
 
 client = MongoClient('localhost', 27017)
@@ -16,7 +16,7 @@ features_list = dict()
 if len(REQUIRED_FEATURES) == 1 and REQUIRED_FEATURES[0] == '*':
     features_list = FEATURES_LIST
 else:
-    for key, val in enumerate(FEATURES_LIST):
+    for key, val in FEATURES_LIST.items():
         if key in REQUIRED_FEATURES:
             features_list[key] = val
 
