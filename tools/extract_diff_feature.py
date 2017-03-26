@@ -4,7 +4,7 @@ from features.feature import Feature
 from text.parts_diff import PartsDiff
 from text.parts_extractor import PartsExtractor
 
-COLLECTION_NAME = 'test_small'
+COLLECTION_NAME = 'train_small'
 
 client = MongoClient('localhost', 27017)
 raw_collection = client.wiki[COLLECTION_NAME]  # type: collection.Collection
@@ -37,7 +37,7 @@ for raw in raw_collection.find({}):
         "_id": raw["_id"]
     }, {
         "$set": {
-            "tmp": diff
+            "bigram_stemmed": diff
         }
     })
 

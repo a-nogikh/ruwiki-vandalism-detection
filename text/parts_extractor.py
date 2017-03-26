@@ -28,6 +28,11 @@ class PartsExtractor:
             for word in re.findall('[\w\-]+', sent):
                 yield word
 
+    def extract_wordnums(self, sentences):
+        for sent in sentences:
+            for word in re.findall('[\d\w\-]+', sent):
+                yield word
+
     def _stem(self, s):
         if len(s) == len(s.encode()): #ascii
             return s #self.stemmer_en.stem(s)

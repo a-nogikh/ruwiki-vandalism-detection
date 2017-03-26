@@ -31,7 +31,11 @@ for raw in raw_collection.find({}, no_cursor_timeout = True):
 
     f = (raw["f"] if "f" in raw else None) or dict()
     for key in features_list:
-        f[key] = features_list[key].extract(raw)
+        res = features_list[key].extract(raw)
+        if type(res) is dict:
+            f.update(res)
+        else:
+            f[key] = res
 
     raw_collection.update_one({
         "_id": raw["_id"]
