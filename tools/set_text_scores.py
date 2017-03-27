@@ -18,8 +18,10 @@ for raw in client.wiki['train_small'] .find({}, {'vandal': 1,  TEXT_FEATURE_KEY:
     #if len(raw["revs"]) <= 1:
     #    continue
 
-    raw_list.append(raw[TEXT_FEATURE_KEY])
-    raw_list.append({key: value * -1 for key, value in raw[TEXT_FEATURE_KEY].items()})
+    filtered = {x: y for x, y in raw[TEXT_FEATURE_KEY].items() if not x.isdigit()}
+    raw_list.append(filtered)
+    #raw_list.append(raw[TEXT_FEATURE_KEY])
+    raw_list.append({key: value * -1 for key, value in filtered.items()})
     raw_res.append(1 if raw["vandal"] else 0)
     raw_res.append(1 if not raw["vandal"] else 0)
     counter.tick()
@@ -38,14 +40,18 @@ def set_features(collection_name):
     raw_list = []
     raw_res = []
     raw_ids = []
+    counter = Counter(100)
     collection = client.wiki[collection_name]  # type: collection.Collection
     for raw in collection.find({}, {"_id": 1, TEXT_FEATURE_KEY: 1, "vandal": 1}):
         if TEXT_FEATURE_KEY not in raw or len(raw[TEXT_FEATURE_KEY]) == 0:
             continue
 
-        raw_list.append(raw[TEXT_FEATURE_KEY])
+        filtered = {x: y for x, y in raw[TEXT_FEATURE_KEY].items() if not x.isdigit()}
+        raw_list.append(filtered)
+        #raw_list.append(raw[TEXT_FEATURE_KEY])
         raw_res.append(1 if raw["vandal"] else 0)
         raw_ids.append(raw["_id"])
+        counter.tick()
 
     pred = lr.predict_proba(fh.transform(raw_list))
     for i, x in enumerate(pred[:, 1]):

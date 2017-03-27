@@ -6,7 +6,7 @@ from features import FEATURES_LIST
 
 load_dotenv(find_dotenv())
 
-COLLECTION_NAME = 'train_small'
+COLLECTION_NAME = 'test_small'
 REQUIRED_FEATURES = ['*']
 
 client = MongoClient('localhost', 27017)

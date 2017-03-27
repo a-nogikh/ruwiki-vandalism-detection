@@ -15,10 +15,11 @@ for raw in client.wiki['train_small'] .find({}):
     if len(raw["revs"]) <= 1:
         continue
 
-    raw_list.append(raw["tmp"])
-    raw_list.append({key: value * -1 for key, value in raw["tmp"].items()})
+    filtered = {x:y for x,y in raw["tmp"].items() if y > 0 and not x.isdigit()}
+    raw_list.append(filtered)
+    #raw_list.append({key: value * -1 for key, value in raw["tmp"].items()})
     raw_res.append(1 if raw["vandal"] else 0)
-    raw_res.append(1 if not raw["vandal"] else 0)
+    #raw_res.append(1 if not raw["vandal"] else 0)
 
 print(len(raw_list))
 
@@ -40,7 +41,9 @@ for raw in client.wiki['test_small'] .find({}):
     if len(raw["revs"]) <= 1:
         continue
 
-    raw_list.append(raw["tmp"])
+    filtered = {x: y for x, y in raw["tmp"].items() if y > 0 and not x.isdigit()}
+    raw_list.append(filtered)
+    #raw_list.append(raw["tmp"])
     raw_res.append(1 if raw["vandal"] else 0)
 
 from sklearn.metrics import confusion_matrix

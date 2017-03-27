@@ -7,7 +7,7 @@ raw_list = []
 raw_res = []
 cnt = Counter(100)
 for raw in client.wiki['train_small'] .find({}):
-    if "f" not in raw or len(raw["f"]) < 13:
+    if "f" not in raw or len(raw["f"]) < 19:
         continue
 
     raw_list.append([x for x in raw["f"].values()])
@@ -21,7 +21,7 @@ from numpy import matrix
 from sklearn.svm import LinearSVC
 
 
-frst = RandomForestClassifier(n_estimators=1000, verbose=1, max_features=5)
+frst = RandomForestClassifier(n_estimators=1500, verbose=1, max_features=7)
 frst.fit(matrix(raw_list), raw_res)
 lc = LinearSVC(verbose=1, max_iter=1000, C=0.05)
 #lc.fit(matrix(raw_list), raw_res)
@@ -32,7 +32,7 @@ for raw in client.wiki['test_small'] .find({}):
     if "tmp" not in raw or len(raw["tmp"]) == 0:
         continue
 
-    if len(raw["revs"]) <= 1 or "f" not in raw or len(raw["f"]) < 13:
+    if len(raw["revs"]) <= 1 or "f" not in raw or len(raw["f"]) < 19:
         continue
 
     raw_list.append([x for x in raw["f"].values()])
