@@ -10,7 +10,8 @@ class RevTools:
         end_revision = None
         next_revision = None
 
-        for rev in sorted(revs, key = lambda x: x.timestamp, reverse=True): # type: Revision
+        sorted_revs = sorted(revs, key = lambda x: x.timestamp, reverse=True)
+        for rev in sorted_revs: # type: Revision
             if end_revision is None:
                 end_revision = rev
                 next_revision = rev
@@ -24,4 +25,4 @@ class RevTools:
 
             next_revision = rev
 
-        return next_revision
+        return sorted_revs[-2]

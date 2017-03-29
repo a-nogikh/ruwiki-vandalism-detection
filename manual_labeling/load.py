@@ -47,9 +47,9 @@ def load_revs(title, revid):
                      flagged='flagged' in x,
                      text='',
                      user=User(
-                         id=None if x['userid'] == 0 else x['userid'],
-                         name=x['user'],
-                         flags=users.get_flags(x['userid']) or []
+                         id=None if 'userid' not in x or x['userid'] == 0 else x['userid'],
+                         name=None if 'user' not in x else x['user'],
+                         flags=(users.get_flags(x['userid']) or []) if 'userid' in x else []
                      )) for x in raw_revs]  # type: [Revision]
     revs.reverse()
 
@@ -85,7 +85,7 @@ def load_revs(title, revid):
 
 
 cnt = Counter(50)
-for item in db_coll.find({"info": None}, no_cursor_timeout=True):
+for item in db_coll.find({"info": None, "is_skipped": False, "is_trusted": False}, no_cursor_timeout=True):
     try:
         response = load_revs(item["q"]["title"], item["q"]["id"])
         db_coll.update_one({"_id": item["_id"]}, {"$set": {
@@ -99,7 +99,7 @@ for item in db_coll.find({"info": None}, no_cursor_timeout=True):
                 "status": 1
             }})
 
-    except SkippedException:
+    except (KeyError, SkippedException):
         db_coll.update_one({"_id": item["_id"]}, {"$set": {
             "is_skipped": True
         }})
