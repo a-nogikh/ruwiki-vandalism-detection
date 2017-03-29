@@ -4,9 +4,9 @@ from datetime import timedelta
 from pymongo import database, collection
 
 from common import vandal_stats_processor
+from common.flagged_revs import FlaggedRevs
 from common.revision_tools import RevisionTools
 from common.user_flags import UserFlags
-from flagged_revs import FlaggedRevs
 from mw.xml_dump.iteration.page import Page
 from mw.xml_dump.iteration.revision import Revision
 

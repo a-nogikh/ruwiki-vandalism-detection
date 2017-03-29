@@ -1,4 +1,6 @@
 import sys
+from datetime import datetime, timezone
+
 #  http://code.activestate.com/recipes/577058/
 def query_yes_no(question, default="yes"):
     """Ask a yes/no question via raw_input() and return their answer.
@@ -54,3 +56,16 @@ def strip_comment(text):
         return text[exclude_to + 2:].strip()
     else:
         return text.strip()
+
+
+def parse_mw_date(timestamp):
+    return datetime(
+        int(timestamp[0:4]),
+        int(timestamp[5:7]),
+        int(timestamp[8:10]),
+        int(timestamp[11:13]),
+        int(timestamp[14:16]),
+        int(timestamp[17:19]),
+        0,
+        timezone.utc
+    )

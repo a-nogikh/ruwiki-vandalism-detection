@@ -9,9 +9,9 @@ from dotenv import load_dotenv, find_dotenv
 from pymongo import MongoClient
 
 from common import utils
+from common.flagged_revs import FlaggedTools
 from common.page_processor import PageProcessor
 from common.user_flags import UserFlagsTools
-from flagged_revs import FlaggedTools
 from mw.xml_dump import Iterator
 from mw.xml_dump.functions import open_file
 
