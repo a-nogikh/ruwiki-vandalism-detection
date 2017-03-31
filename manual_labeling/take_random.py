@@ -6,15 +6,18 @@ from common.counter import Counter
 SOURCE_FILE = '/media/sf_parts/revids.txt'
 TAKE_SAMPLES = 20000
 COLLECTION_NAME = 'labeled'
+APPEND_TO_COLLECTION = False
 
 
 client = MongoClient('localhost', 27017)
 db = client.wiki
 db_coll = db[COLLECTION_NAME] # type: collection.Collection
-db_coll.delete_many({})
-db_coll.drop_indexes()
-db_coll.create_index([("flagged_user", ASCENDING)])
-db_coll.create_index([("status", ASCENDING)])
+
+if not APPEND_TO_COLLECTION:
+    db_coll.delete_many({})
+    db_coll.drop_indexes()
+    db_coll.create_index([("flagged_user", ASCENDING)])
+    db_coll.create_index([("status", ASCENDING)])
 
 random.seed()
 with open(SOURCE_FILE) as data_file:
@@ -22,6 +25,11 @@ with open(SOURCE_FILE) as data_file:
     if len(array) < TAKE_SAMPLES:
         print("The file contains only {} samples!".format(len(array)))
         exit()
+
+    if APPEND_TO_COLLECTION:
+        existing_ids = {x["q"]["id"] for x in db_coll.find({})}
+        array = [(a,b) for a,b in array if a not in existing_ids]
+        print("Items are filtered with {} existing ids!".format(len(existing_ids)))
 
     random.shuffle(array)
     bucket_array = []
