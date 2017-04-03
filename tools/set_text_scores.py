@@ -8,17 +8,21 @@ TEXT_FEATURE_KEY = 'bigram_stemmed'
 
 client = MongoClient('localhost', 27017)
 
+def sign(x: int) -> int:
+    return 1 if x > 0 else -1
+
+
 raw_list = []
 raw_res = []
 counter = Counter(100)
-for raw in client.wiki['train_small'] .find({}, {'vandal': 1,  TEXT_FEATURE_KEY: 1}):
+for raw in client.wiki['new_big_train'] .find({}, {'vandal': 1,  TEXT_FEATURE_KEY: 1}):
     if TEXT_FEATURE_KEY not in raw or len(raw[TEXT_FEATURE_KEY]) == 0:
         continue
 
     #if len(raw["revs"]) <= 1:
     #    continue
 
-    filtered = {x: y for x, y in raw[TEXT_FEATURE_KEY].items() if not x.isdigit()}
+    filtered = {x: sign(y) for x, y in raw[TEXT_FEATURE_KEY].items() if not x.isdigit()}
     raw_list.append(filtered)
     #raw_list.append(raw[TEXT_FEATURE_KEY])
     raw_list.append({key: value * -1 for key, value in filtered.items()})
@@ -31,10 +35,11 @@ print(len(raw_list))
 fh = FeatureHasher(2000000)
 matrix = fh.transform(raw_list)
 
-lr = LogisticRegression(solver='sag', verbose=1, max_iter=100, C=0.5)
+lr = LogisticRegression(solver='sag', verbose=1, max_iter=100, C=1)
 #lc = LinearSVC(verbose=1, max_iter=1000, C=0.05)
 
 lr.fit(matrix, raw_res)
+
 
 def set_features(collection_name):
     raw_list = []
@@ -46,7 +51,7 @@ def set_features(collection_name):
         if TEXT_FEATURE_KEY not in raw or len(raw[TEXT_FEATURE_KEY]) == 0:
             continue
 
-        filtered = {x: y for x, y in raw[TEXT_FEATURE_KEY].items() if not x.isdigit()}
+        filtered = {x: sign(y)  for x, y in raw[TEXT_FEATURE_KEY].items() if not x.isdigit()}
         raw_list.append(filtered)
         #raw_list.append(raw[TEXT_FEATURE_KEY])
         raw_res.append(1 if raw["vandal"] else 0)
@@ -61,6 +66,7 @@ def set_features(collection_name):
 
 
 print("Test..")
-set_features('test_small')
-print("Train..")
-set_features('train_small')
+set_features('manual_dataset')
+
+#print("Train..")
+#set_features('new_train')

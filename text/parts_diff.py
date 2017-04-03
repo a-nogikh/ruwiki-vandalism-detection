@@ -15,6 +15,7 @@ class PartsDiff:
         for key in ans:
             val = ans[key]
             if val == 0: continue
-            res[key] = 1 if val >= 0 else -1
+            res[key] = val
+            #res[key] = 1 if val >= 0 else -1
 
         return res

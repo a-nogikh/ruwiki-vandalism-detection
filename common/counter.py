@@ -19,3 +19,6 @@ class Counter:
     def print(self):
         total_part = "" if self.total is None else "/"+str(self.total)
         print(str(self.current) + total_part)
+
+    def value(self):
+        return self.current

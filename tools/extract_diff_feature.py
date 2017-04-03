@@ -2,9 +2,10 @@ from pymongo import MongoClient, collection
 from common.counter import Counter
 from features.feature import Feature
 from text.parts_diff import PartsDiff
+from common.utils import strip_accents
 from text.parts_extractor import PartsExtractor
 
-COLLECTION_NAME = 'test_small'
+COLLECTION_NAME = 'new_big_train'
 
 # TODO: take the later between reviewed and prev.user
 
@@ -12,6 +13,7 @@ client = MongoClient('localhost', 27017)
 raw_collection = client.wiki[COLLECTION_NAME]  # type: collection.Collection
 
 extractor = PartsExtractor()
+
 cnt = Counter(50)
 
 for raw in raw_collection.find({}):
@@ -22,15 +24,41 @@ for raw in raw_collection.find({}):
         #print(raw)   this should not happen
         continue
 
+    if "rwords" in raw:
+        cnt.tick()
+        continue
+
     texts = Feature.revs(raw)
 
     if texts['prev_user'] is None or texts['current']['text'] is None:
         continue
 
-    sentences_before = extractor.extract_sentences(texts['prev_user']['text'])
-    sentences_after = extractor.extract_sentences(texts['current']['text'])
+    if texts['prev_user']['text'] is None:
+        continue
 
-    diff = PartsDiff.words_sum(
+    prev_text = strip_accents(texts['prev_user']['text'])
+    curr_text = strip_accents(texts['current']['text'])
+
+    sentences_before = [x for x in extractor.extract_sentences(prev_text)]
+    sentences_after = [x for x in extractor.extract_sentences(curr_text)]
+
+    bigram_stemmed = PartsDiff.words_sum(
+        extractor.extract_bigrams_stemmed(sentences_before),
+        extractor.extract_bigrams_stemmed(sentences_after)
+    )
+
+
+    raw_collection.update_one({
+        "_id": raw["_id"]
+    }, {
+        "$unset": {
+            "bigram_stemmed": 1,
+            "rwords": 1
+        }
+    })
+
+
+    rwords = PartsDiff.words_sum(
         extractor.extract_wordnums(sentences_before),
         extractor.extract_wordnums(sentences_after)
     )
@@ -39,7 +67,8 @@ for raw in raw_collection.find({}):
         "_id": raw["_id"]
     }, {
         "$set": {
-            "rwords": diff
+            "bigram_stemmed": bigram_stemmed,
+            "rwords": rwords
         }
     })
 

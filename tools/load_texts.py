@@ -7,7 +7,7 @@ import requests
 
 load_dotenv(find_dotenv())
 
-COLLECTION_NAME = 'train_small'
+COLLECTION_NAME = 'new_big_train'
 
 client = MongoClient('localhost', 27017)
 raw_collection = client.wiki[COLLECTION_NAME]  # type: collection.Collection
@@ -24,17 +24,17 @@ def generate_raw(query):
         flagged_id = None
         if page['last_flagged'] is not None:
             if page['last_flagged']['text'] == '':
-                yield (page['last_flagged']['id'], (doc_id, "last_flagged.text"))
+                #yield (page['last_flagged']['id'], (doc_id, "last_flagged.text"))
                 flagged_id = page['last_flagged']['id']
 
         rev_list = []
         prev = None
         for index, rev in enumerate(revs):
             if rev['id'] == page['session_start'] and prev is not None:
-                if rev["text"] == "":
+                if prev["text"] == "":
                     rev_list.append((prev['id'], index - 1))
 
-            if rev['id'] == flagged_id or rev['id'] == page['last_trusted']:
+            if rev['id'] == page['last_trusted']: # rev['id'] == flagged_id or
                 if rev["text"] == "":
                     rev_list.append((rev['id'], index))
 
@@ -56,7 +56,7 @@ def generate_answers(raw):
 
 counter = Counter(100)
 items = raw_collection.find({}, no_cursor_timeout=True)
-for item in bucket_items(generate_raw(items), 100):
+for item in bucket_items(generate_raw(items), 50):
     ids = set()
     origin = defaultdict(list)
     for task in item:
@@ -69,6 +69,10 @@ for item in bucket_items(generate_raw(items), 100):
         + str_ids
         + '&rvprop=content|ids'
     )
+    '''with open('test.txt', 'w') as file:
+        file.write(r.content.decode("utf-8"))
+    print(r.content)
+    exit(0)'''
 
     results = generate_answers(r.json())
     for x in results:

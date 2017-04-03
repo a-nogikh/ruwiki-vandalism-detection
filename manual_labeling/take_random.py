@@ -6,7 +6,7 @@ from common.counter import Counter
 SOURCE_FILE = '/media/sf_parts/revids.txt'
 TAKE_SAMPLES = 20000
 COLLECTION_NAME = 'labeled'
-APPEND_TO_COLLECTION = False
+APPEND_TO_COLLECTION = True
 
 
 client = MongoClient('localhost', 27017)

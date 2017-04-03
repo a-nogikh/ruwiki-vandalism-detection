@@ -1,5 +1,7 @@
 import sys
+import unicodedata
 from datetime import datetime, timezone
+
 
 #  http://code.activestate.com/recipes/577058/
 def query_yes_no(question, default="yes"):
@@ -69,3 +71,9 @@ def parse_mw_date(timestamp):
         0,
         timezone.utc
     )
+
+
+def strip_accents(s):
+    return ''.join(c for c in unicodedata.normalize('NFD', s)
+                  if unicodedata.category(c) != 'Mn')
+

@@ -5,7 +5,10 @@ import re
 
 # TODO: english transliteration??
 # TODO: check special symbols (&abc; etc)
+# TODO: remove numbers from bigrams
 # TODO: do we really need a wiki parser??
+
+
 class PartsExtractor:
     def __init__(self):
         self.stemmer_ru = SnowballStemmer("russian", ignore_stopwords=True)

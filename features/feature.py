@@ -21,10 +21,14 @@ class Feature:
         if raw["last_flagged"] is not None:
             answer["flagged"] = raw["last_flagged"]
 
+        next_session_start = False
         for rev in reversed(revs):
-            if answer["prev_user"] is None and \
-                            rev["user"]["name"] != last_rev["user"]["name"]:
+            if answer["prev_user"] is None and next_session_start:
+#                            rev["user"]["name"] != last_rev["user"]["name"]:
                 answer["prev_user"] = rev
+
+            if rev["id"] == raw["session_start"]:
+                next_session_start = True
 
             if rev["id"] == raw["last_trusted"]:
                 answer["trusted"] = rev
