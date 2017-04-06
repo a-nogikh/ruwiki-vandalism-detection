@@ -6,8 +6,8 @@ from features import FEATURES_LIST
 
 load_dotenv(find_dotenv())
 
-COLLECTION_NAME = 'manual_dataset'#''new_train'manual_dataset
-REQUIRED_FEATURES = ['*']
+COLLECTION_NAME = 'train_combiner'#''new_train'manual_dataset'new_big_train'train_combiner
+REQUIRED_FEATURES = ['*'] #['historic_stat', 'last_rev_stat']
 
 client = MongoClient('localhost', 27017)
 raw_collection = client.wiki[COLLECTION_NAME]  # type: collection.Collection
@@ -26,6 +26,9 @@ for key in features_list:
 cnt = Counter(100, raw_collection.count())
 for raw in raw_collection.find({}, no_cursor_timeout = True):
     if raw["revs"] is None or len(raw["revs"]) <= 1:
+        continue
+
+    if raw["revs"][-1]["text"] == "":
         continue
 
     f = (raw["f"] if "f" in raw else None) or dict()

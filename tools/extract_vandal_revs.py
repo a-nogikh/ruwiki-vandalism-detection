@@ -8,15 +8,20 @@ from common.user_flags import UserFlagsTools, UserFlags
 client = MongoClient('localhost', 27017)
 
 COLLECTION_NAME_ORIG = 'items'
-COLLECTION_NAME_INTO = 'new_big_train'
-COUNT = 15000
+COLLECTION_NAME_INTO = 'strict_train'
+COUNT = 3000
 
 target_collection = client.wiki[COLLECTION_NAME_INTO]  # type: collection.Collection
 
 
 cnt = Counter(100, COUNT)
+skip = 0
 for item in client.wiki[COLLECTION_NAME_ORIG].find({'vandal': True}, no_cursor_timeout=True).sort("r"):
     if len(item["revs"]) < 2:
+        continue
+
+    skip += 1
+    if skip < 200:
         continue
 
     del item["_id"]

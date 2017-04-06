@@ -89,6 +89,9 @@ def set_features(collection_name):
 print("Test..")
 set_features('manual_dataset')
 
+print("Combiner..")
+set_features('train_combiner')
+
 #print("Train..")
 #set_features('new_train')
 

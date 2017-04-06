@@ -5,7 +5,7 @@ from text.parts_diff import PartsDiff
 from common.utils import strip_accents
 from text.parts_extractor import PartsExtractor
 
-COLLECTION_NAME = 'new_big_train'
+COLLECTION_NAME = 'strict_train'
 
 # TODO: take the later between reviewed and prev.user
 

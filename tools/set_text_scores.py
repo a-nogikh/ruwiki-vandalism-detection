@@ -15,7 +15,7 @@ def sign(x: int) -> int:
 raw_list = []
 raw_res = []
 counter = Counter(100)
-for raw in client.wiki['new_big_train'] .find({}, {'vandal': 1,  TEXT_FEATURE_KEY: 1}):
+for raw in client.wiki['new_big_train'] .find({}, {'vandal': 1,  TEXT_FEATURE_KEY: 1}): #strict_train
     if TEXT_FEATURE_KEY not in raw or len(raw[TEXT_FEATURE_KEY]) == 0:
         continue
 
@@ -65,8 +65,11 @@ def set_features(collection_name):
         }})
 
 
-print("Test..")
-set_features('manual_dataset')
+#print("Test..")
+#set_features('manual_dataset')
+
+print("Combiner..")
+set_features('train_combiner')
 
 #print("Train..")
 #set_features('new_train')

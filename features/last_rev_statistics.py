@@ -23,9 +23,17 @@ class LastRevStatistics(Feature):
             if abs(most_extreme) < abs(val):
                 most_extreme = val
 
+        hours_diff = 0
+
+        if rev['user'] is not None:
+            if 'reg_date' in rev['user'] and rev['user']['reg_date'] is not None:
+                hours_diff = (rev['timestamp'] - rev['user']['reg_date']).total_seconds() / 86400
+
         res = {
             't_title_diff': most_extreme,
-            'lr_minor': 1 if rev["minor"] else 0
+            'lr_minor': 1 if rev["minor"] else 0,
+            'lr_guest': 1 if rev["user"]["id"] is None else 0,
+            'lr_since_reg': hours_diff
         }
 
         return res

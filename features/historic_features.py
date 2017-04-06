@@ -8,6 +8,7 @@ class HistoricFeatures(Feature):
         revs_p = self.revs(raw)
 
         anon_c = sum(1 for x in revs if x["user"]["id"] is not None)
+        other_cnt = sum(1 for x in revs[:-1] if x['user']['name'] == revs_p['current']['user']['name'])
 
         res = {
             'h_prevhrs': 1000 if revs_p['prev_user'] is None else (
@@ -17,7 +18,8 @@ class HistoricFeatures(Feature):
             'h_guest_p': anon_c / len(revs),
             'h_beenflagged': 1 if any(1 for x in revs[:-1] if x['user']['name'] == revs_p['current']['user']['name']
                                       and x['flagged']) else 0,
-            'h_otheredits': sum(1 for x in revs[:-1] if x['user']['name'] == revs_p['current']['user']['name'])
+            'h_otheredits': other_cnt,
+            'h_otheredits_p': other_cnt / len(revs)
         }
 
         return res

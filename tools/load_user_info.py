@@ -1,19 +1,20 @@
 from collections import defaultdict
 from dotenv import load_dotenv, find_dotenv
 from pymongo import MongoClient, collection
-from common.utils import bucket_items
+from common.utils import bucket_items, parse_mw_date
 from common.counter import Counter
 import requests
 
+
 load_dotenv(find_dotenv())
 
-COLLECTION_NAME = 'strict_train'
+COLLECTION_NAME = 'train_combiner'
 
 client = MongoClient('localhost', 27017)
 raw_collection = client.wiki[COLLECTION_NAME]  # type: collection.Collection
 
 
-# Generate sequence of required texts
+# Generate sequence of required infos
 def generate_raw(query):
     for page in query:
         revs = page["revs"]
@@ -21,37 +22,26 @@ def generate_raw(query):
             continue
 
         doc_id = page["_id"]
-        flagged_id = None
-        if page['last_flagged'] is not None:
-            if page['last_flagged']['text'] == '':
-                #yield (page['last_flagged']['id'], (doc_id, "last_flagged.text"))
-                flagged_id = page['last_flagged']['id']
+        last_rev = revs[-1]
+        if last_rev["user"]["id"] is None:
+            continue
 
-        rev_list = []
-        prev = None
-        for index, rev in enumerate(revs):
-            if rev['id'] == page['session_start'] and prev is not None:
-                if prev["text"] == "":
-                    rev_list.append((prev['id'], index - 1))
-
-            if rev['id'] == page['last_trusted']: # rev['id'] == flagged_id or
-                if rev["text"] == "":
-                    rev_list.append((rev['id'], index))
-
-            prev = rev
-
-        if revs[-1]['text'] == "":
-            rev_list.append((revs[-1]['id'], len(revs) - 1))
-
-        for pair in set(rev_list):  # add unique
-            yield (pair[0], (doc_id, "revs." + str(pair[1]) + ".text"))
+        if "reg_date" not in last_rev["user"]:
+            yield (last_rev["user"]["id"], (doc_id, "revs."+str(len(revs) - 1)+".user.reg_date"))
 
 
 # Generate sequence of returned texts
 def generate_answers(raw):
-    for x in raw['query']['pages'].items():
-        for rev in x[1]['revisions']:
-            yield (rev['revid'], rev['*'] if '*' in rev else None)
+    for x in raw['query']['users']:
+        if x is None or "registration" not in x:
+            yield (x['userid'], None)
+            continue
+
+        if x["registration"] == "" or x["registration"] == None:
+            yield (x['userid'], None)
+            continue
+
+        yield (x['userid'], parse_mw_date(x['registration']))
 
 
 counter = Counter(100)
@@ -65,9 +55,8 @@ for item in bucket_items(generate_raw(items), 50):
 
     str_ids = '|'.join(str(x) for x in ids)
     r = requests.get(
-        'https://ru.wikipedia.org/w/api.php?action=query&format=json&prop=revisions&revids='
+        'https://ru.wikipedia.org/w/api.php?format=json&action=query&list=users&usprop=registration&ususerids='
         + str_ids
-        + '&rvprop=content|ids'
     )
     '''with open('test.txt', 'w') as file:
         file.write(r.content.decode("utf-8"))
