@@ -3,7 +3,7 @@ from text.char_statistics import CharStatistics
 from collections import defaultdict
 from lzma import LZMACompressor, FORMAT_ALONE
 from common.utils import strip_accents
-
+from collections import Counter
 
 def check_cut(orig: str, cut:str):
     if len(orig) <= len(cut):
@@ -25,6 +25,25 @@ def check_cut(orig: str, cut:str):
 
 class TextCharStatistics(Feature):
     russian_alphabet = {x for x in "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"}
+    abbrs = {'ОАО','ЗАО','АО','ТАСС','ЦБ','РФ','США','СССР','НАТО','КБК','ISDN'}
+    allowed_rgb = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'}
+
+    def check_rgb(self, rgb:str):
+        if len(rgb) != 8:
+            return False
+        for c in rgb.upper():
+            if c not in self.allowed_rgb:
+                return False
+
+        return True
+
+    def detect_wikification(self, prev, now):
+        prev_cnt = Counter(prev)
+        curr_cnt = Counter(now)
+
+        good_inc = [u"\u00A0", u"\u00C2", "«", "»", "“", "”", "„", "±", "…"]
+        return any(prev_cnt[x] < curr_cnt[x] for x in good_inc)
+
     def extract(self, raw):
         sum = CharStatistics.stats('')
         compressor = LZMACompressor(format=FORMAT_ALONE)
@@ -37,10 +56,23 @@ class TextCharStatistics(Feature):
         sign_sums = [0, 0]
         been_mixed = 0
 
+        dropped_upper = defaultdict(int)
+        added_upper = defaultdict(int)
         for word, diff in collection.items():  # type: str,int
+            if diff < 0:
+                dropped_upper[word.upper()] -= diff
+            elif diff > 0:
+                added_upper[word.upper()] += diff
+
+        for word, diff in collection.items():  # type: str,int
+            upper = word.upper()
+            if dropped_upper[upper] == added_upper[upper]:
+                continue
+
             if diff < 0:
                 sign_sums[0] += -diff
                 continue
+
 
             sign_sums[1] += diff
 
@@ -66,9 +98,10 @@ class TextCharStatistics(Feature):
             if been_latin and been_non_latin:
                 been_mixed += 1
 
-            stats = CharStatistics.stats(word)
-            for k, v in stats.items():
-                sum[k] += v
+            if word not in self.abbrs and not self.check_rgb(word):
+                stats = CharStatistics.stats(word)
+                for k, v in stats.items():
+                    sum[k] += v
 
         revs = self.revs(raw)
         curr_text = (revs["current"]['text'] if revs['current'] is not None else '')  or ''
@@ -89,13 +122,19 @@ class TextCharStatistics(Feature):
 
         punct_prev = 0
         for c in prev_text:
-            if c in ['.', ',', '!', '?']:
+            if c in ['.', ',', '!', '?', ':']:
                 punct_prev += 1
 
         punct_now = 0
         for c in curr_text:
-            if c in ['.', ',', '!', '?']:
+            if c in ['.', ',', '!', '?', ':']:
                 punct_now += 1
+
+        main_curr = curr_text.count("{{main|")
+        main_prev = prev_text.count("{{main|")
+
+        longest_conseq = [CharStatistics.longest_conseq(prev_text), CharStatistics.longest_conseq(curr_text)]
+        longest_conseq_upper = [CharStatistics.longest_upper(prev_text), CharStatistics.longest_upper(curr_text)]
 
         return {
             't_cap': sum['capitalized'] / (1 + sum['alpha']),
@@ -105,7 +144,10 @@ class TextCharStatistics(Feature):
             't_c_div': len(added_words) / (1 + len(chrs)),
             't_numalpha': sum['num'] / (1 + sum['alpha'] + sum['num']),
             't_lat': sum['latin'] / (1 + sum['alpha']),
-            't_lgt_cs': CharStatistics.longest_conseq(curr_text),
+            't_lgt_cs': longest_conseq[1],
+            't_lgt_cs_rel': longest_conseq[1] / (longest_conseq[0] + 1),
+            't_lgt_up': longest_conseq_upper[1],
+            't_lgt_up_rel': longest_conseq_upper[1] / (longest_conseq_upper[0]  + 1),
             't_szdiff': (len(curr_text)- len(prev_text)),
             't_sz_rel': (1  + len(curr_text)) / (1+len(prev_text)),
             't_w_total': sign_sums[1] - sign_sums[0],
@@ -126,5 +168,8 @@ class TextCharStatistics(Feature):
             't_w_mixed': been_mixed / (1 + sign_sums[1]),
             't_cut': 1 if check_cut(prev_text, curr_text) else 0,
             't_punct_diff': punct_now - punct_prev,
-            't_punct_words': (punct_now - punct_prev)/(sign_sums[1] - sign_sums[0] + 0.9)
+            't_punct_words': (punct_now - punct_prev)/(sign_sums[1] - sign_sums[0] + 0.9),
+            't_main_diff': (main_curr - main_prev),
+            't_diff_rel': (sign_sums[1] - sign_sums[0]) / (1 + min(sign_sums)),
+            't_wikificated': 1 if self.detect_wikification(prev_text, curr_text) else 0
         }

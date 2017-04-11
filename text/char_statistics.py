@@ -43,3 +43,25 @@ class CharStatistics:
             max_len = max(max_len, current_len)
 
         return max_len
+
+    @staticmethod
+    def longest_upper(text: str) -> int:
+        prev = None
+        current_len = 0
+        max_len = 0
+
+        for c in text:
+            if c == prev:
+                current_len += 1
+            else:
+                current_len = 1
+
+            if not c.isalnum() or not c.isupper():
+                current_len = 0
+                prev = None
+            else:
+                prev = c
+
+            max_len = max(max_len, current_len)
+
+        return max_len

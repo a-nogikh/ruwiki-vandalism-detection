@@ -125,7 +125,7 @@ class VandalStatsProcessor:
 
         except geoip2.errors.GeoIP2Error:
             self.errors['no_country']['vandal'][tm.hour] += vandal
-            self.errors['no_country']['total'][tm.hour] += vandal
+            self.errors['no_country']['total'][tm.hour] += 1
             return
 
 

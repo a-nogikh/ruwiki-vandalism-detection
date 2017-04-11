@@ -33,7 +33,11 @@ class LastRevStatistics(Feature):
             't_title_diff': most_extreme,
             'lr_minor': 1 if rev["minor"] else 0,
             'lr_guest': 1 if rev["user"]["id"] is None else 0,
-            'lr_since_reg': hours_diff
+            'lr_since_reg': hours_diff,
+            'lr_hour': rev['timestamp'].hour + rev['timestamp'].minute/60,
+            'lr_wday': rev["timestamp"].weekday(),
+            'lr_usr_contr': rev['user']['contrib_total'] if 'contrib_total' in rev['user'] else 0,
+            'lr_usr_contr_pg': rev['user']['contrib_pages'] if 'contrib_pages' in rev['user'] else 0
         }
 
         return res

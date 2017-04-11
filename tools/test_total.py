@@ -18,13 +18,18 @@ OK_FEATURES = {
     "t_c_div",
     "t_numalpha",
     "t_lat",
-    "t_lgt_cs",
+
+    #'t_lgt_cs',
+    't_lgt_cs_rel',
+    #'t_lgt_up',
+    't_lgt_up_rel',
+
     "t_szdiff",
     "t_w_total",
     "t_w_added",
     "t_w_deleted",
     "h_prevhrs",
-    "h_hasflagged",
+    #"h_hasflagged",
     "h_guest_p",
     "h_beenflagged",
     "lr_minor",
@@ -43,8 +48,8 @@ OK_FEATURES = {
     "t_rbr_c_diff",
     "t_rbr_diff",
     "t_rbr_curr",
-    "lr_guest",
-    "t_cut",
+   # "lr_guest",
+    #"t_cut", #  low outcomes
     'c_def_wrds',
     'c_wrd_avg',
     't_punct_diff',
@@ -52,13 +57,23 @@ OK_FEATURES = {
     't_sz_rel',
     't_cap_to_lwr',
     'h_otheredits_p',
-    'lr_since_reg'
+    'lr_since_reg',
+    't_main_diff',
+    #'t_diff_rel',
+    't_wikificated',
+    #'lr_hour',
+    'lr_usr_contr',
+    'lr_usr_contr_pg',
+    #'lr_wday',
+    #'prn_diff',
+    #'prn_rel',
+    #'prn_rel_edit'
 }
 
 raw_list = []
 raw_res = []
 cnt = Counter(100)
-for raw in client.wiki['new_big_train'] .find({}):
+for raw in client.wiki['new_big_train'] .find({}): #new_big_train,train_combiner
     if "f" not in raw or len(raw["f"]) < 25:
         continue
 
@@ -79,7 +94,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 
-frst = RandomForestClassifier(n_estimators=2000, verbose=1, min_samples_leaf = 25, max_features=5)
+frst = RandomForestClassifier(n_estimators=2500, verbose=1, min_samples_leaf = 40, max_features=5)
 
 #frst = GradientBoostingClassifier(n_estimators=1000, learning_rate=0.3,
 #    max_depth=2, random_state=0, verbose=1,max_features = 2,loss='exponential')
@@ -108,7 +123,9 @@ for raw in client.wiki['manual_dataset'] .find({}):
         continue
 
     #raw["f"].pop('t_biscore', None)
-    raw_sec.append([raw["f"]["t_biscore"]])
+    vandal_score = 0.1216 if raw["f"]["lr_guest"] else 0.10
+    day_score = 1 if raw["revs"][-1]["timestamp"].weekday() <= 4 else 0.97
+    raw_sec.append([raw["f"]["t_biscore"]*day_score*vandal_score])
     raw_chr.append([raw["f"]["t_charscore"]])
     raw_list.append([x for n, x in raw["f"].items() if n in OK_FEATURES])
     raw_orig.append(raw)
@@ -125,11 +142,11 @@ other = np.array(raw_sec)
 other_char = np.array(raw_chr)
 pred = frst.predict_proba(raw_list)
 
-'''
+
 for k in range(0,len(raw_list)):
     raw_orig[k]["score"] = pred[k,1] * other[k,0] * other_char[k, 0]
 
-
+'''
 for obj in sorted(raw_orig, key=lambda x: x["score"], reverse=False):
     if obj["vandal"] == 1:
         revs = Feature.revs(obj)
@@ -138,8 +155,8 @@ for obj in sorted(raw_orig, key=lambda x: x["score"], reverse=False):
         ))
         print(obj)
 '''
-
-fpr, tpr, thresholds = metrics.roc_curve(raw_res, pred[:,1]*other[:, 0]*other_char[:,0], pos_label=1) #pred[:,1]*np.minimum(other[:, 0],other_char[:,0])
+#*other_char[:,0]
+fpr, tpr, thresholds = metrics.roc_curve(raw_res, pred[:,1]*other[:, 0], pos_label=1) #pred[:,1]*np.minimum(other[:, 0],other_char[:,0])
 
 #pred = lc.decision_function(raw_list)
 #fpr, tpr, thresholds = metrics.roc_curve(raw_res, pred, pos_label=1)
