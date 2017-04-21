@@ -3,7 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy
 
-def draw_roc(fpr, tpr):
+def draw_roc(fpr, tpr, filename):
     plt.ion()
     matplotlib.interactive(True)
     fig = plt.figure()
@@ -25,5 +25,5 @@ def draw_roc(fpr, tpr):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver operating characteristic')
     plt.legend(loc="lower right")
-    plt.savefig('tmp.png')
+    plt.savefig(filename)
     plt.show()

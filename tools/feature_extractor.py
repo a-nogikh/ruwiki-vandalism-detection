@@ -6,8 +6,8 @@ from features import FEATURES_LIST
 
 load_dotenv(find_dotenv())
 
-COLLECTION_NAME = 'manual_dataset'#''new_train'manual_dataset'new_big_train'train_combiner
-REQUIRED_FEATURES = ['*'] #['historic_stat', 'last_rev_stat']
+COLLECTION_NAME = 'new_big_train'#''new_train'manual_dataset'new_big_train'train_combiner
+REQUIRED_FEATURES = ['url_stat'] #['historic_stat', 'last_rev_stat']
 
 client = MongoClient('localhost', 27017)
 raw_collection = client.wiki[COLLECTION_NAME]  # type: collection.Collection

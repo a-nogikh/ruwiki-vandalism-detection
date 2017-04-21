@@ -2,10 +2,10 @@ from pymongo import MongoClient, collection
 from common.counter import Counter
 from features.feature import Feature
 from text.parts_diff import PartsDiff
-from common.utils import strip_accents
+from common.utils import strip_accents, strip_blockquotes
 from text.parts_extractor import PartsExtractor
 
-COLLECTION_NAME = 'strict_train'
+COLLECTION_NAME = 'any_train'
 
 # TODO: take the later between reviewed and prev.user
 
@@ -24,9 +24,9 @@ for raw in raw_collection.find({}):
         #print(raw)   this should not happen
         continue
 
-    if "rwords" in raw:
-        cnt.tick()
-        continue
+    #if "rwords" in raw:
+    #    cnt.tick()
+    #    continue
 
     texts = Feature.revs(raw)
 
@@ -36,8 +36,13 @@ for raw in raw_collection.find({}):
     if texts['prev_user']['text'] is None:
         continue
 
-    prev_text = strip_accents(texts['prev_user']['text'])
-    curr_text = strip_accents(texts['current']['text'])
+
+    cnt.tick()
+    #if cnt.value() < 18000:
+   #      continue
+
+    prev_text = strip_blockquotes(strip_accents(texts['prev_user']['text']))
+    curr_text = strip_blockquotes(strip_accents(texts['current']['text']))
 
     sentences_before = [x for x in extractor.extract_sentences(prev_text)]
     sentences_after = [x for x in extractor.extract_sentences(curr_text)]
@@ -72,7 +77,6 @@ for raw in raw_collection.find({}):
         }
     })
 
-    cnt.tick()
 
 print ("Done")
 

@@ -4,6 +4,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
 
 
+print("http://google.com")
+sys.exit(0)
+
 client = MongoClient('localhost', 27017)
 
 raw_list = []

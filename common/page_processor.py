@@ -15,7 +15,7 @@ TRUSTED_GROUPS = ['editor', 'autoeditor', 'rollbacker', 'reviewer', 'sysop', 'bu
 # number of revisions to save in a database
 TAKE_REVISIONS = 50
 # to keep the size of the data set reasonably small
-TAKE_ONE_GOOD_IN = 6
+TAKE_ONE_GOOD_IN = 10
 
 
 class PageProcessor:
@@ -26,9 +26,11 @@ class PageProcessor:
                  geoip):
         self.flagged_revs = flagged_pages
         self.user_flags = user_flags
-        self.db = db.items  # type: collection.Collection
+        self.db = db.any_items  # type: collection.Collection
+        #self.db.delete_many({})
         self.to_save = []
         self.ok_cnt = [0, 0]
+        self.items_pushed = 0
         self.vandal = vandal_stats_processor.VandalStatsProcessor(db, geoip)
 
     def process(self, page: Page, excl):
@@ -76,8 +78,6 @@ class PageProcessor:
                     (rev.cancelled_by is None and rev.reverted_by is None):
                 self.record_normal_statistics(rev)
 
-                if not is_trusted_rev:
-                    continue
             else:
                 self.record_vandal_statistics(rev)
                 rev_vandal = True
@@ -89,8 +89,11 @@ class PageProcessor:
                 if reverter.reverted_by is not None or reverter.cancelled_by is not None:
                     continue # not interested in cancelled/reverted reverts
 
-            if rev.reverts_till is not None or rev.cancels is not None:
-                continue  # not interested in reverts and cancels
+                continue
+
+            reverts_itself = rev.reverts_till is not None or rev.cancels is not None
+            #if rev.reverts_till is not None or rev.cancels is not None:
+            #    continue  # not interested in reverts and cancels
 
             if rev.timestamp.year != 2016:
                 continue  # not interested in other years
@@ -110,6 +113,7 @@ class PageProcessor:
                 "revs": self.make_db_object(revs_list),
                 "last_flagged": self.make_db_object([prev_last_flagged])[0] if prev_last_flagged is not None else None,
                 "last_trusted": None,
+                "reverts": reverts_itself,
                 "session_start": session_start.id,
                 "vandal": rev_vandal
             }
@@ -121,7 +125,9 @@ class PageProcessor:
             self.to_save.append(obj)
             if len(self.to_save) >= 100:
                 self.db.insert_many(self.to_save)
+                self.items_pushed += len(self.to_save)
                 self.to_save.clear()
+
 
         # memory cleanup
         for rev in revs:

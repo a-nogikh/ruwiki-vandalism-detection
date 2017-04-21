@@ -13,7 +13,7 @@ class VandalStatsProcessor:
                  db: database,
                  geoip: geoip2.database.Reader
                  ):
-        self.collection = db.stats  # type: collection.Collection
+        self.collection = db.stats2  # type: collection.Collection
         self.geoip = geoip
 
         countries = [x.alpha_2 for x in list(pycountry.countries)]

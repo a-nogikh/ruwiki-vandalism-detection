@@ -4,7 +4,55 @@ from features.feature import Feature
 import collections
 from common.counter import Counter
 
+def calculate(raw):
+    curr_text = ""
+    for word, diff in raw["rwords"].items():
+        if diff > 0:
+            curr_text += word
 
+    distr = collections.Counter(curr_text.lower())
+
+    distr = {x: y for x, y in distr.items() if y > 0}
+    total_diff = sum(abs(x) for x in distr.values())
+
+    if total_diff != 0:
+        for c in distr:
+            distr[c] /= total_diff
+
+    return distr
+
+'''
+def calculate(raw):
+    prev_text = ""
+    curr_text = ""
+    for word, diff in raw["rwords"].items():
+        if diff > 0:
+            curr_text += word
+        else:
+            prev_text += word
+
+    prev_distr = collections.Counter(prev_text.lower())
+    distr = collections.Counter(curr_text.lower())
+
+    for c in distr:
+        if c in prev_distr:
+            distr[c] -= prev_distr[c]
+
+    for c in prev_distr:
+        if c not in distr:
+            distr[c] = -prev_distr[c]
+
+    distr = {x: y for x, y in distr.items() if y > 0}
+    total_diff = sum(abs(x) for x in distr.values())
+
+    if total_diff != 0:
+        for c in distr:
+            distr[c] /= total_diff
+
+    return distr
+'''
+
+'''
 def calculate(revs):
     prev_text = revs["prev_user"]["text"] or ''
     curr_text = revs["current"]["text"] or ''
@@ -27,7 +75,7 @@ def calculate(revs):
             distr[c] /= total_diff
 
     return distr
-
+'''
 
 def KLdist(distr, prior):
     ans = 0
@@ -35,11 +83,26 @@ def KLdist(distr, prior):
         if c in prior:
             ans += pr * math.log2(pr / prior[c])
 
+    if(ans== 0):
+        ans = 10
     return ans
+
+
+def BHdist(distr, prior):
+    ans = 0
+    for c, pr in distr.items():
+        if c in prior:
+            ans += math.sqrt(pr * prior[c])
+
+    if ans == 0:
+        return -1
+    return -math.log2(ans)
+
+
 
 client = MongoClient('localhost', 27017)
 
-allowed="abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789+-~.,?!:;=\"|{} \n\r\t"
+allowed="abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789-"
 
 vandal_distr = dict()
 good_distr = dict()
@@ -52,25 +115,21 @@ total_cnt = 0
 raw_list = []
 raw_res = []
 cnt = Counter(50)
-for raw in client.wiki['train_combiner'] .find({}):
+for raw in client.wiki['any_train'] .find({}): # train_combiner,strict_train
     if len(raw["revs"]) <= 1:
         continue
 
-    revs = Feature.revs(raw)
-    if revs["prev_user"] is None:
+    if "rwords" not in raw:
         continue
 
-    distr = calculate(revs)
+    distr = calculate(raw)
 
     if raw["vandal"]:
-        pass
-        #for c,k in distr.items():
-        #    if c in vandal_distr:
-        #        vandal_distr[c] += k
-    else:
-        for c,k in distr.items():
-            if c in good_distr:
-                good_distr[c] += k
+        continue
+
+    for c,k in distr.items():
+        if c in good_distr:
+            good_distr[c] += k
         
     total_cnt += 1
 
@@ -108,14 +167,12 @@ def set_features(collection_name):
         if len(raw["revs"]) <= 1:
             continue
 
-        revs = Feature.revs(raw)
-        if revs["prev_user"] is None:
+        if "rwords" not in raw:
             continue
-
-        distr = calculate(revs)
+        distr = calculate(raw)
 
         collection.update_one({"_id": raw["_id"]}, {"$set": {
-            "f.t_charscore": KLdist(distr, good_distr)
+            "f.t_charscore": BHdist(distr, good_distr)
         }})
 
         raw_list.append({key: value for key, value in distr.items()})

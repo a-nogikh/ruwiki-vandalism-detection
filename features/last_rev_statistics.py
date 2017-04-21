@@ -1,9 +1,12 @@
 from .feature import Feature
 import re
 from collections import defaultdict
+from common.user_flags import UserFlags
+from dependencies import DepRepo
+
 
 class LastRevStatistics(Feature):
-
+    flags = DepRepo.flags()
     def extract(self, raw):
         revs = raw["revs"]
         rev = revs[-1]
@@ -24,8 +27,13 @@ class LastRevStatistics(Feature):
                 most_extreme = val
 
         hours_diff = 0
+        adv_flag = 0
 
         if rev['user'] is not None:
+            if rev['user']['id'] is not None:
+                flags = self.flags.get_flags(rev['user']['id']) or []
+                adv_flag = 1 if 'autoconfirmed' in flags or 'uploader' in flags else 0
+
             if 'reg_date' in rev['user'] and rev['user']['reg_date'] is not None:
                 hours_diff = (rev['timestamp'] - rev['user']['reg_date']).total_seconds() / 86400
 
@@ -37,7 +45,8 @@ class LastRevStatistics(Feature):
             'lr_hour': rev['timestamp'].hour + rev['timestamp'].minute/60,
             'lr_wday': rev["timestamp"].weekday(),
             'lr_usr_contr': rev['user']['contrib_total'] if 'contrib_total' in rev['user'] else 0,
-            'lr_usr_contr_pg': rev['user']['contrib_pages'] if 'contrib_pages' in rev['user'] else 0
+            'lr_usr_contr_pg': rev['user']['contrib_pages'] if 'contrib_pages' in rev['user'] else 0,
+            'lr_advflag' : adv_flag
         }
 
         return res

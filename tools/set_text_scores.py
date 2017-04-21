@@ -30,7 +30,7 @@ raw_res = []
 raw_list_opp = []
 
 counter = Counter(100)
-for raw in client.wiki['new_big_train'] .find({}, {'vandal': 1,  TEXT_FEATURE_KEY: 1}): #strict_train
+for raw in client.wiki['any_train'] .find({}, {'vandal': 1,  TEXT_FEATURE_KEY: 1}): #strict_train
     if TEXT_FEATURE_KEY not in raw or len(raw[TEXT_FEATURE_KEY]) == 0:
         continue
 
@@ -38,7 +38,7 @@ for raw in client.wiki['new_big_train'] .find({}, {'vandal': 1,  TEXT_FEATURE_KE
     #    continue
 
     filtered = {x: sign(y) for x, y in raw[TEXT_FEATURE_KEY].items() if not x.isdigit()}
-    filtered2 = {x:y for x,y in filtered.items() if y > 0 and not check_rgb(x) and ' ' not in x}
+    filtered2 = {x:1 for x,y in filtered.items() if y > 0 and not check_rgb(x) and ' ' not in x}
     #filtered3 = {x: y *(-1) for x, y in filtered.items() if y < 0 and not check_rgb(x)}
 
     raw_list.append(filtered2)
@@ -49,16 +49,16 @@ for raw in client.wiki['new_big_train'] .find({}, {'vandal': 1,  TEXT_FEATURE_KE
     counter.tick()
 
 print(len(raw_list))
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import  BernoulliNB
 fh = FeatureHasher(2000000)
 matrix = fh.transform(raw_list)
 matrix_opp = fh.transform(raw_list_opp)
 
-lr = LogisticRegression(solver='sag', verbose=1, max_iter=100, C=0.1)
-#lr = GaussianNB()
+lr = LogisticRegression(solver='sag', verbose=1, max_iter=300, C=0.01)
+#lr = BernoulliNB()
 lr.fit(matrix, raw_res)
 
-lr2 = LogisticRegression(solver='sag', verbose=1, max_iter=100, C=0.1)
+lr2 = LogisticRegression(solver='sag', verbose=1, max_iter=300, C=0.01)
 #lr2 = GaussianNB()
 lr2.fit(matrix_opp, raw_res)
 
@@ -76,7 +76,7 @@ def set_features(collection_name):
             continue
 
         filtered = {x: sign(y)  for x, y in raw[TEXT_FEATURE_KEY].items() if not x.isdigit()}
-        filtered2 = {x: y for x, y in filtered.items() if y > 0 and not check_rgb(x) and ' ' not in x}
+        filtered2 = {x: 1 for x, y in filtered.items() if y > 0 and not check_rgb(x) and ' ' not in x}
 
         raw_list.append(filtered2)
         raw_list_opp.append({x: y * (-1) for x, y in filtered.items() if y < 0 and not check_rgb(x) and ' ' not in x})
@@ -89,15 +89,15 @@ def set_features(collection_name):
     pred2 = lr2.predict_proba(fh.transform(raw_list_opp))
     for i, x in enumerate(pred[:, 1]):
         collection.update_one({"_id": raw_ids[i]}, {"$set": {
-            "f.t_biscore": max(x,pred2[i,1])
+            "f.t_biscore": x#max(x,pred2[i,1])
         }})
 
 
 print("Test..")
 set_features('manual_dataset')
 
-print("Combiner..")
-set_features('train_combiner')
+#print("Combiner..")
+#set_features('train_combiner')
 
-#print("Train..")
-#set_features('new_train')
+print("Train..")
+set_features('new_big_train')

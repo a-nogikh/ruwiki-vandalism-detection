@@ -1,6 +1,7 @@
 import datetime as dt
 import gc
 import os
+from dependencies import DepRepo
 import sys
 
 import geoip2.database
@@ -26,10 +27,12 @@ if not res:
 #################
 client = MongoClient('localhost', 27017)
 db = client.wiki
-geoip = geoip2.database.Reader(os.environ['GEO2_DIRECTORY'], maxminddb.MODE_MMAP_EXT)
-flagged = FlaggedTools.load(os.environ['FLAGGED_REVISIONS'])
-users = UserFlagsTools.load(os.environ['USER_FLAGS'])
+geoip = DepRepo.geoip() #geoip2.database.Reader(os.environ['GEO2_DIRECTORY'], maxminddb.MODE_MMAP_EXT)
+flagged = FlaggedTools.load('/home/alexander/flagged.pkl')
+users = DepRepo.flags() #UserFlagsTools.load(os.environ['USER_FLAGS'])
 #################
+
+
 
 
 d1 = dt.datetime.now()
@@ -46,7 +49,7 @@ dump = Iterator.from_file(open_file(file_name))
 for page in dump:
     totalcnt += 1
     if totalcnt % 50 == 0:
-        print(str(rcnt) + "/" + str(cnt) + "/" + str(totalcnt))
+        print(str(rcnt) + "/" + str(cnt) + "/" + str(totalcnt) + " pushed: " + str(pp.items_pushed))
         gc.collect()
 
     excl = page.namespace != 0 and page.namespace != 10
@@ -54,8 +57,6 @@ for page in dump:
         cnt += 1
     # check page namespace
     rcnt+= pp.process(page, excl)
-    if cnt >= 10:
-        break
 
     page.clear()
     del page

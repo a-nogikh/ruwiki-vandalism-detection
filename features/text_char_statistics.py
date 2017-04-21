@@ -122,12 +122,12 @@ class TextCharStatistics(Feature):
 
         punct_prev = 0
         for c in prev_text:
-            if c in ['.', ',', '!', '?', ':']:
+            if c in ['.', ',', '!', '?', ':', ';']:
                 punct_prev += 1
 
         punct_now = 0
         for c in curr_text:
-            if c in ['.', ',', '!', '?', ':']:
+            if c in ['.', ',', '!', '?', ':', ';']:
                 punct_now += 1
 
         main_curr = curr_text.count("{{main|")
