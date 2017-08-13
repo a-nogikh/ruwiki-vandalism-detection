@@ -8,7 +8,7 @@ import requests
 
 load_dotenv(find_dotenv())
 
-COLLECTION_NAME = 'any_train'
+COLLECTION_NAME = 'train_wcancel'
 
 client = MongoClient('localhost', 27017)
 raw_collection = client.wiki[COLLECTION_NAME]  # type: collection.Collection
@@ -23,8 +23,8 @@ def generate_raw(query):
 
         doc_id = page["_id"]
         last_rev = revs[-1]
-        if last_rev["user"]["id"] is None:
-            continue
+        #if last_rev["user"]["id"] is not None:
+        #    continue
 
         if "contrib_total" not in last_rev["user"]:
             yield (last_rev, (doc_id, "revs."+str(len(revs) - 1)+".user."))
@@ -43,15 +43,17 @@ def generate_answers(raw):
 
         yield (x['userid'], parse_mw_date(x['registration']))
 
+print(len(list(generate_raw(raw_collection.find({}, no_cursor_timeout=True)))))
 
-counter = Counter(100)
+counter = Counter(50)
 items = raw_collection.find({}, no_cursor_timeout=True)
 for item in generate_raw(items):
     origin = defaultdict(list)
 
     r = requests.get(
-        'https://ru.wikipedia.org/w/api.php?action=query&format=json&list=usercontribs&ucuserids='
-        + str(item[0]["user"]["id"]) + "&ucstart=" +
+        'https://ru.wikipedia.org/w/api.php?action=query&format=json&list=usercontribs&'+
+        #'ucuserids='+ str(item[0]["user"]["id"])
+        '&ucuser='+ str(item[0]["user"]["name"]) + "&ucstart=" +
         item[0]["timestamp"].strftime("%Y-%m-%dT%H:%M:%SZ") +
         "&ucprop=ids&uclimit=100"
     )
@@ -68,7 +70,7 @@ for item in generate_raw(items):
     print(r.content)
     exit(0)'''
 
-
+    print("{} : {} {}".format(str(item[0]["user"]["name"]), total, len(pages)))
     raw_collection.update_one({
         "_id": item[1][0]
     }, {"$set": {

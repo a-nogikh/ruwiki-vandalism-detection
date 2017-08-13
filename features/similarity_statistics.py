@@ -4,10 +4,7 @@ from collections import defaultdict
 import re
 
 
-class PronounStatistics(Feature):
-    pronouns={"я","мне","моей","моим","моему",
-              "мы","наш","нашему", "наше", "наша",
-              "ты","вы","тебе","вам","твой","твоему","твоей","твоим", "ваша", "ваше", "твое", "вашему"}
+class SimilarityStatistics(Feature):
 
     def extract(self, raw):
         collection = raw["rwords"] if "rwords" in raw else {}
@@ -16,30 +13,31 @@ class PronounStatistics(Feature):
         curr_text = (revs["current"]['text'] if revs['current'] is not None else '') or ''
         prev_text = (revs['prev_user']['text'] if revs['prev_user'] is not None else '') or ''
 
-        diff_pronouns = defaultdict(int)
-        added_words = 0
+        curr_text = curr_text.lower()
+        prev_text = prev_text.lower()
 
-        for word, diff in collection.items():  # type: str,int
-            if diff > 0:
-                added_words += 1
+        bigrams = raw["bigram_stemmed"] if "bigram_stemmed" in raw else {}
 
-            lower = word.lower()
-            if lower not in self.pronouns:
+        added = [0, 0]
+        dropped = [0, 0]
+        for word, diff in bigrams.items():
+            if ' ' in word:
                 continue
 
-            diff_pronouns[word.upper()] += diff
+            if diff > 0:
+                added[1] += 1
+                added[0] += 1 if word in prev_text else 0
+            else:
+                dropped[1] += 1
+                dropped[0] += 1 if word in curr_text else 0
 
-        before_cnt = 0
-        for word in re.findall('[\w]+', prev_text):
-            lower = word.lower()
-            if lower in self.pronouns:
-                before_cnt += 1
+        added_score = 0 if added[1] == 0 else added[0] / added[1]
+        dropped_score = 0 if dropped[1] == 0 else dropped[0] / dropped[1]
 
-        total_pronouns_diff = sum(diff_pronouns.values())
-        total_pronouns_diff_pos = total_pronouns_diff if total_pronouns_diff > 0 else 0
+
 
         return {
-            'prn_diff': total_pronouns_diff,
-            'prn_rel': (total_pronouns_diff_pos + before_cnt) / (before_cnt + 1),
-            'prn_rel_edit': total_pronouns_diff_pos / (added_words + 1)
+            'ss_added': added_score,
+            'ss_dropped': dropped_score,
+            'ss_diff': added_score - dropped_score
         }

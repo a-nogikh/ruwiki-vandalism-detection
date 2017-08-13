@@ -5,6 +5,9 @@ from .last_rev_statistics import LastRevStatistics
 from .pronoun_statistics import PronounStatistics
 from .sandbox_features import SandboxFeatures
 from .url_statistics import UrlStatisticsFeatures
+from .similarity_statistics import SimilarityStatistics
+from .morph_statistics import MorphStatistics
+from .link_statistics import LinkStatistics
 
 
 FEATURES_LIST = {
@@ -14,5 +17,8 @@ FEATURES_LIST = {
     'last_rev_stat': LastRevStatistics,
     'pronoun_stat': PronounStatistics,
     'sandbox_stat': SandboxFeatures,
-    'url_stat': UrlStatisticsFeatures
+    'morph_stat': MorphStatistics,
+    'sim_stat': SimilarityStatistics,
+    'url_stat': UrlStatisticsFeatures,
+    'link_stat': LinkStatistics
 }

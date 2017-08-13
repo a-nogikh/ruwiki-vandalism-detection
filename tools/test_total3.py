@@ -9,6 +9,62 @@ OK_FEATURES = {
     "forest_score"
 }
 
+OK_FEATURES = {
+    "t_biscore",
+    "t_charscore",
+    "c_len",
+    "c_cap",
+    "c_lgt_w",
+    "c_wrd_c",
+    "c_numalpha",
+    "c_lgt_cs",
+    "t_cap",
+    "t_lgt_w",
+    "t_cmpr",
+    "t_c_div",
+    "t_numalpha",
+    "t_lat",
+    "t_lgt_cs",
+    "t_szdiff",
+    "t_w_total",
+    "t_w_added",
+    "t_w_deleted",
+    "h_prevhrs",
+    "h_hasflagged",
+    "h_guest_p",
+    "h_beenflagged",
+    "lr_minor",
+    "t_mdf_wrds",
+    "t_nl_diff",
+    "t_nl_wrds",
+    "t_title_diff",
+    "h_otheredits",
+    "t_dbr_o_diff",
+    "t_dbr_c_diff",
+    "t_dbr_diff",
+    "t_dbr_curr",
+    "t_nl2_diff",
+    "t_w_mixed",
+    "t_rbr_o_diff",
+    "t_rbr_c_diff",
+    "t_rbr_diff",
+    "t_rbr_curr",
+    "lr_guest",
+    "t_cut",
+    'c_def_wrds',
+    'c_wrd_avg',
+    't_punct_diff',
+    't_punct_words',
+    't_sz_rel',
+    't_cap_to_lwr',
+    'h_otheredits_p',
+    'lr_since_reg',
+    't_main_diff',
+    't_diff_rel',
+    't_wikificated',
+   # 'lr_hour'
+}
+
 
 raw_list = []
 raw_res = []
@@ -33,11 +89,11 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 
-frst = RandomForestClassifier(n_estimators=1500, verbose=1, max_features=3)
+frst = RandomForestClassifier(n_estimators=1500, verbose=1, min_samples_leaf = 15,  max_features=4)
 
 #frst = GaussianNB()
 #frst= MLPClassifier(solver='adam', alpha=1,hidden_layer_sizes=(8,8), random_state=12,
- #                   activation="tanh",verbose=1,tol=1e-6,max_iter=300)
+#                    activation="tanh",verbose=1,tol=1e-6,max_iter=300)
 
 #frst = SVC(max_iter=200, verbose=True, kernel='linear', probability=True)
 frst.fit(matrix(raw_list), raw_res)

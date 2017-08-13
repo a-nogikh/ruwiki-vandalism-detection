@@ -15,7 +15,8 @@ TRUSTED_GROUPS = ['editor', 'autoeditor', 'rollbacker', 'reviewer', 'sysop', 'bu
 # number of revisions to save in a database
 TAKE_REVISIONS = 50
 # to keep the size of the data set reasonably small
-TAKE_ONE_GOOD_IN = 10
+TAKE_ONE_GOOD_IN = 3
+TAKE_ONE_BAD_IN = 2
 
 
 class PageProcessor:
@@ -26,7 +27,7 @@ class PageProcessor:
                  geoip):
         self.flagged_revs = flagged_pages
         self.user_flags = user_flags
-        self.db = db.any_items  # type: collection.Collection
+        self.db = db.new_items_wcancelq  # type: collection.Collection
         #self.db.delete_many({})
         self.to_save = []
         self.ok_cnt = [0, 0]
@@ -51,9 +52,9 @@ class PageProcessor:
         allowed_delta = timedelta(hours=3)
 
         for index, rev in enumerate(revs):
-            flags = self.user_flags.get_flags(rev.contributor.id) or []
+            flags = []# self.user_flags.get_flags(rev.contributor.id) or []
 
-            is_trusted_user = self.is_trusted(flags)
+            is_trusted_user = False #self.is_trusted(flags)
             is_flagged_rev = self.flagged_revs.exists(rev.id)
             prev_last_flagged = last_flagged
 
@@ -73,34 +74,42 @@ class PageProcessor:
             if 'bot' in flags:
                 continue  # ignore bots
 
+            if is_trusted_user:
+                continue
+
+            if rev.timestamp.year != 2016:
+                continue  # not interested in other years
+
+
             rev_vandal = False
             if is_trusted_rev or \
                     (rev.cancelled_by is None and rev.reverted_by is None):
                 self.record_normal_statistics(rev)
+                if not is_flagged_rev:
+                    continue
 
             else:
                 self.record_vandal_statistics(rev)
                 rev_vandal = True
 
                 reverter = rev.reverted_by
-                if reverter is None:
-                    continue  # reverted
+                if reverter is not None:
+                    if reverter.reverted_by is not None or reverter.cancelled_by is not None:
+                        continue # not interested in cancelled/reverted reverts
 
-                if reverter.reverted_by is not None or reverter.cancelled_by is not None:
-                    continue # not interested in cancelled/reverted reverts
-
-                continue
-
+                #continue
+            continue
             reverts_itself = rev.reverts_till is not None or rev.cancels is not None
             #if rev.reverts_till is not None or rev.cancels is not None:
             #    continue  # not interested in reverts and cancels
 
-            if rev.timestamp.year != 2016:
-                continue  # not interested in other years
 
             if not rev_vandal:
                 if random.randrange(TAKE_ONE_GOOD_IN) != 0:
                     continue  # to keep list of good revs reasonably small
+            else:
+                if random.randrange(TAKE_ONE_BAD_IN) != 0:
+                    continue  # to keep list of bad revs reasonably small
 
             revs_list = revs[max(0, index - TAKE_REVISIONS):(1 + index)]
             self.ok_cnt[0 if rev_vandal else 1] += 1
@@ -124,7 +133,7 @@ class PageProcessor:
 
             self.to_save.append(obj)
             if len(self.to_save) >= 100:
-                self.db.insert_many(self.to_save)
+                #self.db.insert_many(self.to_save)
                 self.items_pushed += len(self.to_save)
                 self.to_save.clear()
 
@@ -156,6 +165,7 @@ class PageProcessor:
             for x in revisions
             ]
 
+
     def set_reverted_and_cancelled(self, revs):
         # TODO: consider edit wars
         for index, revision in enumerate(revs):
@@ -174,7 +184,8 @@ class PageProcessor:
                         break
 
             reverting = RevisionTools.is_reverting(revision.comment)
-            if reverting and revision.contributor.id is not None:
+            reverting_hg = RevisionTools.is_hg_reverting(revision.comment)
+            if (reverting_hg or reverting) and revision.contributor.id is not None:
                 reverted = None
                 for x in range(index - 1, 0, -1):
                     if reverted is None:
@@ -192,16 +203,17 @@ class PageProcessor:
                     revision.reverts_last = revs[x]
 
     def record_normal_statistics(self, rev: Revision):
-        if rev.contributor.id is None:
-            self.vandal.add_ip(rev.contributor.user_text, rev.timestamp, False)
-        else:
-            self.vandal.add_user(rev.timestamp, False)
+        pass
+        #if rev.contributor.id is None:
+        #    self.vandal.add_ip(rev.contributor.user_text, rev.timestamp, False)
+        #else:
+        #    self.vandal.add_user(rev.timestamp, False)
 
     def record_vandal_statistics(self, rev: Revision):
-        if rev.contributor.id is None:
-            self.vandal.add_ip(rev.contributor.user_text, rev.timestamp, True)
-        else:
-            self.vandal.add_user(rev.timestamp, True)
+        #if rev.contributor.id is None:
+        #    self.vandal.add_ip(rev.contributor.user_text, rev.timestamp, True)
+        #else:
+        #    self.vandal.add_user(rev.timestamp, True)
 
         if rev.reverted_by is not None:
             reverter = rev.reverted_by  # type: Revision
@@ -219,8 +231,10 @@ class PageProcessor:
     def save(self):
         self.vandal.save()
         if len(self.to_save) > 0:
-            self.db.insert_many(self.to_save)
+            pass
+            #self.db.insert_many(self.to_save)
         self.to_save.clear()
 
     def clear(self):
-        self.db.delete_many({})
+        pass
+        #self.db.delete_many({})

@@ -5,7 +5,7 @@ from text.parts_diff import PartsDiff
 from common.utils import strip_accents, strip_blockquotes
 from text.parts_extractor import PartsExtractor
 
-COLLECTION_NAME = 'any_train'
+COLLECTION_NAME = 'train_wcancel'
 
 # TODO: take the later between reviewed and prev.user
 
@@ -41,8 +41,8 @@ for raw in raw_collection.find({}):
     #if cnt.value() < 18000:
    #      continue
 
-    prev_text = strip_blockquotes(strip_accents(texts['prev_user']['text']))
-    curr_text = strip_blockquotes(strip_accents(texts['current']['text']))
+    prev_text = strip_accents(texts['prev_user']['text']) #strip_blockquotes
+    curr_text = strip_accents(texts['current']['text'])
 
     sentences_before = [x for x in extractor.extract_sentences(prev_text)]
     sentences_after = [x for x in extractor.extract_sentences(curr_text)]

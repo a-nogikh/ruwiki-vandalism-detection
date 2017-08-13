@@ -151,7 +151,7 @@ print(len(raw_list))
 fh = FeatureHasher(2000000)
 matrix = fh.transform(raw_list)
 
-lr = LogisticRegression(solver='sag', verbose=1, max_iter=100, C=0.5)
+lr = LogisticRegression(solver='sag', verbose=1, max_iter=100, C=0.3)
 lc = LinearSVC(verbose=1, max_iter=1000, C=0.05)
 
 #lr.fit(matrix, raw_res)
@@ -189,6 +189,10 @@ def set_features(collection_name):
 
 print("Test..")
 set_features('manual_dataset')
+
+print("Test2..")
+set_features('manual_new')
+
 
 #print("Combiner..")
 #set_features('train_combiner')

@@ -25,7 +25,7 @@ def check_cut(orig: str, cut:str):
 
 class TextCharStatistics(Feature):
     russian_alphabet = {x for x in "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"}
-    abbrs = {'ОАО','ЗАО','АО','ТАСС','ЦБ','РФ','США','СССР','НАТО','КБК','ISDN'}
+    abbrs = {'adawsdas'}#{'ОАО','ЗАО','АО','ТАСС','ЦБ','РФ','США','СССР','НАТО','КБК','ISDN'}
     allowed_rgb = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'}
 
     def check_rgb(self, rgb:str):

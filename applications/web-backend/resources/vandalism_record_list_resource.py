@@ -1,6 +1,6 @@
 from flask_restful import Resource, Api
 
 
-class VandalismRecordList(Resource):
+class VandalismRecordListResource(Resource):
     def get(self):
         return {'hello': 'world'}

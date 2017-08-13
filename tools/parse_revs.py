@@ -37,7 +37,7 @@ users = DepRepo.flags() #UserFlagsTools.load(os.environ['USER_FLAGS'])
 
 d1 = dt.datetime.now()
 pp = PageProcessor(flagged, users, db, geoip)
-
+#pp.clear()
 
 cnt = 0; totalcnt = 0
 rcnt = 0

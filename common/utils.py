@@ -38,6 +38,12 @@ def query_yes_no(question, default="yes"):
                              "(or 'y' or 'n').\n")
 
 
+def assure_yes(question):
+    if not query_yes_no(question):
+        print("Ok. Exiting..")
+        sys.exit(0)
+
+
 def bucket_items(raw, bucket_size):
     curr_list = []
     for item in raw:
@@ -80,3 +86,8 @@ def strip_accents(s):
 
 def strip_blockquotes(s):
     return re.sub('<blockquote>.*?<\/blockquote>', '', s)
+
+def get_url(revs):
+    return "https://ru.wikipedia.org/w/index.php?type=revision&diff={}&oldid={}".format(
+        revs["current"]["id"], revs["prev_user"]["id"]
+    )

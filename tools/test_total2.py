@@ -4,7 +4,7 @@ from common.counter import Counter
 client = MongoClient('localhost', 27017)
 
 OK_FEATURES = {
-    "t_biscore",
+    #"t_biscore",
     #"t_charscore",
     "c_len",
     "c_cap",
@@ -44,7 +44,19 @@ OK_FEATURES = {
     "t_rbr_diff",
     "t_rbr_curr",
     "lr_guest",
-    "t_cut"
+    "t_cut",
+    'c_def_wrds',
+    'c_wrd_avg',
+    't_punct_diff',
+    't_punct_words',
+    't_sz_rel',
+    't_cap_to_lwr',
+    'h_otheredits_p',
+    'lr_since_reg',
+    't_main_diff',
+    't_diff_rel',
+    't_wikificated',
+   # 'lr_hour'
 }
 
 raw_list = []

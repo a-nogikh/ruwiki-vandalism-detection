@@ -1,7 +1,11 @@
 import re
 
 REVERT_STRINGS = [
-    "откат]]", "]] Откат", ") откачены к версии"
+    "откат]]", "]] Откат", ") откачены к версии",
+]
+
+HG_REVERT_STRINGS = [
+    "Откачены правки","Откат правок"
 ]
 
 CANCEL_STRINGS = [
@@ -31,3 +35,10 @@ class RevisionTools:
         if comment is None:
             return None
         return any(x in comment for x in REVERT_STRINGS)
+
+    @staticmethod
+    def is_hg_reverting(comment):
+        if comment is None:
+            return None
+        return any(x in comment for x in HG_REVERT_STRINGS)
+

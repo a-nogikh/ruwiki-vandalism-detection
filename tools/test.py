@@ -1,8 +1,34 @@
-from pymongo import MongoClient, collection
+from pymongo import MongoClient
 from sklearn.feature_extraction import FeatureHasher
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
 
+from dependencies import DepRepo
+from common.utils import get_url
+
+from difflib import SequenceMatcher
+from common.utils import query_yes_no
+from features.feature import Feature
+
+collection = DepRepo.mongo_collection('new_big_train')  # type: collection.Collection
+flags2 = DepRepo.flags()
+
+TRUSTED_GROUPS = ['editor', 'autoeditor', 'rollbacker', 'reviewer', 'sysop', 'bureaucrat']
+users = 0
+total=0
+for item in collection.find({"f.link_avg_new":0,"vandal":True}, no_cursor_timeout=True):
+    if len(item["revs"]) < 2:
+        continue
+
+    revs = Feature.revs(item)
+    print(get_url(revs))
+
+
+import pymorphy2
+
+morph = pymorphy2.MorphAnalyzer()
+
+test = morph.parse('')
 
 print("http://google.com")
 sys.exit(0)

@@ -7,7 +7,7 @@ import requests
 
 load_dotenv(find_dotenv())
 
-COLLECTION_NAME = 'any_train'
+COLLECTION_NAME = 'train_wcancel'
 
 client = MongoClient('localhost', 27017)
 raw_collection = client.wiki[COLLECTION_NAME]  # type: collection.Collection

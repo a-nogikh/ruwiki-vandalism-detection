@@ -4,8 +4,8 @@ from random import random, seed
 from common.counter import Counter
 
 
-COLLECTION_ORIG = 'labeled'
-COLLECTION_INTO = 'manual_dataset'
+COLLECTION_ORIG = 'manual_new_raw'
+COLLECTION_INTO = 'manual_new'
 
 
 client = MongoClient('localhost', 27017)
@@ -21,4 +21,7 @@ for item in db[COLLECTION_ORIG].find({"is_auto": False, "status": {"$in": [1,2]}
         "r": random(),
         "vandal": item["status"] == 2
     })
+
+    db_coll.insert_one(src)
+
 

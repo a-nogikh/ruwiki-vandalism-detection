@@ -8,15 +8,16 @@ from common.utils import query_yes_no
 
 load_dotenv(find_dotenv())
 
+
 if not query_yes_no("Do you really want to reset collections?"):
     exit()
 
 TASK = {
-    'test_small': {
+    't22est_small': {
         'vandal': 800,
         'good': 800
     },
-    'train_small': {
+    'tr22ain_small': {
         'vandal': 8000,
         'good': 8000
     }
@@ -24,7 +25,7 @@ TASK = {
 
 client = MongoClient('localhost', 27017)
 
-items_collection = client.wiki.items  # type: collection.Collection
+items_collection = client.wiki.any_items  # type: collection.Collection
 total_count = 0
 
 for collection_name in TASK:

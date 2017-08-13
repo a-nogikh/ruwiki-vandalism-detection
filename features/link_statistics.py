@@ -1,14 +1,43 @@
 from .feature import Feature
-from text.char_statistics import CharStatistics
-from collections import defaultdict
 import re
+from difflib import SequenceMatcher
 
 
-class SimilarityStatistics(Feature):
+class LinkStatistics(Feature):
+    link_regexp = re.compile('\[\[([^\|\]]+)\|([^\]]+)\]\]')  #   \[\[([\:\d\w\s\-\_]+)\|([\:\d\-\_\w\s]+)\]\]
+    link_single = re.compile('\[\[([^\]]+)\]\]')
+
+    def similar(self, a, b):
+        return SequenceMatcher(None, a, b).ratio()
+
+    def check_illogical(self, a, b):
+        if len(a) > 5 or len(b) > 5:
+            return 1
+
+        a_has_digits = False
+        for x in a:
+            if x.isdigit():
+                a_has_digits = True
+                break
+
+        min_score = 1
+        for x in b:
+            if x.isdigit() and x not in a and a_has_digits:
+                return 0
+
+            if x in a:
+                min_score = 1
+                continue
+
+            max_score = 0
+            for a_item in a:
+                max_score = max(max_score, self.similar(x, a_item))
+
+            min_score = max(min_score, max_score)
+
+        return min_score
 
     def extract(self, raw):
-        collection = raw["rwords"] if "rwords" in raw else {}
-
         revs = self.revs(raw)
         curr_text = (revs["current"]['text'] if revs['current'] is not None else '') or ''
         prev_text = (revs['prev_user']['text'] if revs['prev_user'] is not None else '') or ''
@@ -16,28 +45,45 @@ class SimilarityStatistics(Feature):
         curr_text = curr_text.lower()
         prev_text = prev_text.lower()
 
-        bigrams = raw["bigram_stemmed"] if "bigram_stemmed" in raw else {}
+        #if raw["page"]["id"] == 6737949:
+        #    print("ello")
 
-        added = [0, 0]
-        dropped = [0, 0]
-        for word, diff in bigrams.items():
-            if ' ' in word:
+        worst_new_link = 1
+        avg_new_link = list()
+        prev_links = { x for x in self.link_regexp.findall(prev_text)}
+        prev_firsts = { x[0].strip() for x in prev_links } | {x.strip() for x in self.link_single.findall(prev_text)}
+
+
+        for new_link in self.link_regexp.findall(curr_text):
+            if new_link in prev_links:
                 continue
 
-            if diff > 0:
-                added[1] += 1
-                added[0] += 1 if word in prev_text else 0
-            else:
-                dropped[1] += 1
-                dropped[0] += 1 if word in curr_text else 0
+            first = new_link[0].strip()
+            if first not in prev_firsts:
+                continue
 
-        added_score = 0 if added[1] == 0 else added[0] / added[1]
-        dropped_score = 0 if dropped[1] == 0 else dropped[0] / dropped[1]
+            second = new_link[1].strip()
+            #print(first)
+            if first.startswith(":") or len(first) < 4 or len(second) < 4:
+                continue
 
+            #print(new_link)
+            link = list(re.findall("[^\s,]+", first))
+            title = list(re.findall("[^\s,]+", second))
+            #print("_".join(link) + " / " + "_".join(title))
 
+            score = self.check_illogical(link, title)
+            if score < 0.3 and revs["current"] is not None and revs["prev_user"] is not None:
+                url = "https://ru.wikipedia.org/w/index.php?type=revision&diff={}&oldid={}".format(
+                    revs["current"]["id"], revs["prev_user"]["id"]
+                )
+                #print(str(new_link) + " :: " + str(raw["vandal"]))
+                #print(url)
+
+            worst_new_link = min(worst_new_link, score)
+            avg_new_link.append(score)
 
         return {
-            'ss_added': added_score,
-            'ss_dropped': dropped_score,
-            'ss_diff': added_score - dropped_score
+            'link_worst': worst_new_link,
+            'link_avg_new': 1 if len(avg_new_link) == 0 else sum(avg_new_link) / len(avg_new_link)
         }

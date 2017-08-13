@@ -1,27 +1,57 @@
-from dotenv import load_dotenv, find_dotenv
-from pymongo import MongoClient, collection
-from common.counter import Counter
-from features import FEATURES_LIST
-import os
-from common.user_flags import UserFlagsTools, UserFlags
+from dependencies import DepRepo
+from common.utils import assure_yes
+from random import random
+import pymongo
 
-client = MongoClient('localhost', 27017)
+COLLECTION_NAME_ORIG = 'new_items_wcancel'
+COLLECTION_NAME_INTO = 'train_wcancel'
+COUNT = 10000
 
-COLLECTION_NAME_ORIG = 'items'
-COLLECTION_NAME_INTO = 'strict_train'
-COUNT = 3000
+source_collection = DepRepo.mongo_collection(COLLECTION_NAME_ORIG)
+target_collection = DepRepo.mongo_collection(COLLECTION_NAME_INTO)
 
-target_collection = client.wiki[COLLECTION_NAME_INTO]  # type: collection.Collection
+assure_yes('Do you really want to put {} into {}?'.format(COLLECTION_NAME_ORIG, COLLECTION_NAME_INTO))
+assure_yes('{} gonna be truncated'.format(COLLECTION_NAME_INTO))
+
+target_collection.delete_many({})
+
+existing_ids = set()
+for item in DepRepo.mongo_collection('new_big_train').find({}):
+    existing_ids.add(item["revs"][-1]["id"])
 
 
-cnt = Counter(100, COUNT)
-skip = 0
-for item in client.wiki[COLLECTION_NAME_ORIG].find({'vandal': True}, no_cursor_timeout=True).sort("r"):
+random_counter = DepRepo.counter(100)
+print("Randomizing")
+for item in source_collection.find({}, no_cursor_timeout=True):
+    source_collection.update_one({'_id': item['_id']}, {
+        '$set':{
+                'r': random()
+            }
+        })
+    random_counter.tick()
+
+print("Random field created")
+
+# setting indices
+indices = source_collection.index_information()
+if 'random' not in indices:
+    print("Creating index")
+    source_collection.create_index([
+            ("vandal", pymongo.ASCENDING),
+            ("r", pymongo.ASCENDING)
+        ],
+        name="random")
+    print("Index created")
+
+excluded_ids = 0
+cnt = DepRepo.counter(100, COUNT)
+
+for item in source_collection.find({'vandal': True}, no_cursor_timeout=True).sort("r"):
     if len(item["revs"]) < 2:
         continue
 
-    skip += 1
-    if skip < 200:
+    if item["revs"][-1]["id"] in existing_ids:
+        excluded_ids += 1
         continue
 
     del item["_id"]
@@ -30,3 +60,5 @@ for item in client.wiki[COLLECTION_NAME_ORIG].find({'vandal': True}, no_cursor_t
 
     if cnt.value() > COUNT:
         break
+
+print("Total skipped: {}".format(excluded_ids))
