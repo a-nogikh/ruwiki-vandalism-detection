@@ -1,9 +1,1 @@
-python-dotenv
-bitarray
-statprof
-dotmap
-pytz
-geoip2
-pycountry
-pymongo
-mwparserfromhell
+requests
