@@ -6,4 +6,3 @@ class Page:
         self.page_id = page_id
         self.title = title
         self.ns = ns
-        self.revisions = RevisionList()
