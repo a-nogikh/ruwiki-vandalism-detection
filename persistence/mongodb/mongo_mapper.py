@@ -1,4 +1,5 @@
 import pymongo
+import copy
 
 
 class _MongoObjectOperations:
@@ -71,12 +72,14 @@ class MongoMapper:
                  collection_name: str,
                  database: pymongo.database.Database,
                  object_mapper: MongoObjectMapper):
-        self.collection = collection_name
+        self.collection = database[collection_name]
         self.mapper = object_mapper
         self.db = database
 
         # variables for modifications accumulation
-        self.object_map = dict()
+        self.id_to_object = dict()
+        self.object_to_id = dict()
+        self.id_to_copy = dict()
         self.to_insert = set()
         self.to_delete = set()
         
@@ -89,7 +92,48 @@ class MongoMapper:
         self.to_insert.remove(obj)
 
     def query(self, query_obj):
-        pass
+        return [self._convert_object(x) for x in self.collection.find(query_obj)]
 
     def save(self):
-        pass
+        changes = []
+        for obj in self.to_delete:
+            if obj in self.id_to_object:
+                changes.append(pymongo.DeleteOne({"_id": self.id_to_object[obj]}))
+                self._forget_object(obj)
+
+        for obj in self.to_insert:
+            changes.append(pymongo.InsertOne(self.object_mapper.to_dict(obj)))
+
+        for obj_id in self.id_to_object:
+            mongo_diff = _MongoObjectOperations.get_diff(self.id_to_copy[obj_id],
+                                                         self.id_to_object[obj_id])
+            if mongo_diff:
+                changes.append(pymongo.UpdateOne({'_id': obj_id}, mongo_diff))
+
+        self.to_delete.clear()
+        self.to_insert.clear()
+
+        if changes:
+            self.collection.bulk_write(changes)
+        
+    def _forget_object(self, obj):
+        if obj in self.object_to_id:
+            obj_id = self.object_to_id[obj]
+            del self.id_to_copy[obj_id]
+            del self.id_to_object[obj_id]
+            del self.object_to_id[obj]
+    
+    def _convert_object(self, raw):
+        obj_id = raw["_id"].str
+        if obj_id in self.id_to_object:
+            return self.id_to_object[obj_id]
+
+        copied_obj = copy.deepcopy(raw)
+        del copied_obj["_id"]
+
+        mapped_obj = self.object_mapper.from_dict(copied_obj)
+        self.id_to_object[obj_id] = mapped_obj
+        self.id_to_copy[obj_id] = copied_obj
+        self.object_to_id[mapped_obj] = obj_id
+
+        return mapped_obj
