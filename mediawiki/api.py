@@ -19,4 +19,4 @@ class MediaWikiApi:
         r = requests.get(self.base_path, params)
         # TODO: handle failure
 
-        return r.json()
+        return r.json()["query"]
