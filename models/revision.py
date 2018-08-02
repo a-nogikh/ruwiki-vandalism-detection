@@ -6,7 +6,7 @@ class User:
 
 
 class RegisteredUser(User):
-    def __init__(user_id: int, user_name: str):
+    def __init__(self, user_id: int, user_name: str):
         self.user_id = user_id
         self.user_name = user_name
 
@@ -15,7 +15,7 @@ class RegisteredUser(User):
 
 
 class Guest(User):
-    def __init__(ip: str):
+    def __init__(self, ip: str):
         self.ip = ip
 
     def __eq__(self, other):
@@ -23,7 +23,8 @@ class Guest(User):
 
 
 class Revision:
-    def __init__(rev_id: int, user: User, time: datetime):
+    def __init__(self, rev_id: int, user: User, time: datetime, comment: str):
         self.rev_id = rev_id
         self.user = user
         self.time = time
+        self.comment = comment

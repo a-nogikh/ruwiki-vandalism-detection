@@ -92,7 +92,7 @@ class MongoMapper:
         self.to_insert.remove(obj)
 
     def query(self, query_obj):
-        return [self._convert_object(x) for x in self.collection.find(query_obj)]
+        return (self._convert_object(x) for x in self.collection.find(query_obj))
 
     def save(self):
         changes = []
@@ -115,6 +115,13 @@ class MongoMapper:
 
         if changes:
             self.collection.bulk_write(changes)
+
+    def clear(self):
+        self.to_delete.clear()
+        self.to_insert.clear()
+        self.id_to_copy.clear()
+        self.id_to_object.clear()
+        self.object_to_id.clear()
         
     def _forget_object(self, obj):
         if obj in self.object_to_id:
