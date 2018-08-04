@@ -8,7 +8,7 @@ from models import Instance, Page, Revision, Guest, RegisteredUser, User
 class MediaWikiApiMock:        
     def __init__(self):
         self.query_revisions_by_ids_resp = {}
-    def query_revisions_by_ids(self, page_ids: int, rvprop: list, rvlimit: int = 10):
+    def query_revisions_by_ids(self, page_ids: int, rvprop: list):
         return self.query_revisions_by_ids_resp
 
 SAMPLE_REVISION_REGISTERED_USER_RAW = {
