@@ -1,5 +1,6 @@
-from .api import MediaWikiApi
 import dateutil.parser
+from injector import inject
+from .api import MediaWikiApi
 from models import Instance, Revision, Page, RegisteredUser, Guest
 
 
@@ -30,12 +31,13 @@ class BadRevisionIdException(Exception):
     pass
 
 class MediaWikiIntegration:
+    @inject
     def __init__(self, api: MediaWikiApi):
         self.api = api
 
     def load_single_revision_instance(self, rev_id: int) -> Instance:
         attrs = ['ids', 'timestamp', 'user', 'userid', 'comment', 'flags']
-        response = self.api.query_revisions_by_ids([rev_id], attrs, 1)
+        response = self.api.query_revisions_by_ids([rev_id], attrs)
         if "badrevids" in response:
             raise BadRevisionIdException()
 
