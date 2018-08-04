@@ -1,5 +1,6 @@
 import pymongo
 import copy
+from injector import inject
 
 
 class _MongoObjectOperations:
@@ -68,6 +69,7 @@ class MongoObjectMapper:
 
 # Data mapper & unit of work approach
 class MongoMapper:
+    @inject
     def __init__(self,
                  collection_name: str,
                  database: pymongo.database.Database,
@@ -84,12 +86,12 @@ class MongoMapper:
         self.to_delete = set()
         
     def insert(self, obj):
-        self.to_insert.insert(obj)
-        self.to_delete.remove(obj)
+        self.to_insert.add(obj)
+        self.to_delete.discard(obj)
 
     def remove(self, obj):
-        self.to_delete.insert(obj)
-        self.to_insert.remove(obj)
+        self.to_delete.add(obj)
+        self.to_insert.discard(obj)
 
     def query(self, query_obj):
         return (self._convert_object(x) for x in self.collection.find(query_obj))
