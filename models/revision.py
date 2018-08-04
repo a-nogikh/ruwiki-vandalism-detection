@@ -28,8 +28,8 @@ class Revision:
                  user: User,
                  timestamp: datetime,
                  comment: str,
-                 is_minor: bool,
-                 is_reviewed: bool):
+                 is_minor: bool = False,
+                 is_reviewed: bool = False):
         self.rev_id = rev_id
         self.user = user
         self.timestamp = timestamp
