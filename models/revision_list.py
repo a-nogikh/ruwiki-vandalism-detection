@@ -1,4 +1,5 @@
 from .revision import Revision
+from typing import List
 
 
 class RevisionList:

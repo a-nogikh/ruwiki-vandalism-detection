@@ -1,9 +1,10 @@
-from pymongo import MongoClient
-from injector import Injector, provider
+from pymongo import MongoClient, database
+from injector import Injector, Module, provider
 
-class InjectorModule:
+
+class InjectorModule(Module):
     @provider
-    def provide_database():
+    def provide_database(self) -> database.Database:
         client = MongoClient()
         return client["test_database"]
     

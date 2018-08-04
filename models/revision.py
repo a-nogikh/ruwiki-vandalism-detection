@@ -23,8 +23,24 @@ class Guest(User):
 
 
 class Revision:
-    def __init__(self, rev_id: int, user: User, time: datetime, comment: str):
+    def __init__(self,
+                 rev_id: int,
+                 user: User,
+                 timestamp: datetime,
+                 comment: str,
+                 is_minor: bool,
+                 is_reviewed: bool):
         self.rev_id = rev_id
         self.user = user
-        self.time = time
+        self.timestamp = timestamp
         self.comment = comment
+        self.is_minor = is_minor
+        self.is_reviewed = is_reviewed
+
+    def __eq__(self, other):
+        return self.rev_id == other.rev_id \
+            and self.user == other.user \
+            and self.timestamp == other.timestamp \
+            and self.comment == other.comment \
+            and self.is_minor == other.is_minor \
+            and self.is_reviewed == other.is_reviewed
