@@ -3,3 +3,6 @@ click
 injector
 pymongo
 python-dateutil
+redis
+hiredis
+cachetools

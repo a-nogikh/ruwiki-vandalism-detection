@@ -7,9 +7,10 @@ from models import Instance, Page, Revision, Guest, RegisteredUser, User
 
 class MediaWikiApiMock:        
     def __init__(self):
-        self.query_revisions_by_ids_resp = {}
+        self.query_revisions_by_ids_resp = []
     def query_revisions_by_ids(self, page_ids: int, rvprop: list):
-        return self.query_revisions_by_ids_resp
+        for x in self.query_revisions_by_ids_resp:
+            yield x
 
 SAMPLE_REVISION_REGISTERED_USER_RAW = {
     "revid": 2345,
@@ -75,18 +76,16 @@ class TestMediaWikiIntegration(unittest.TestCase):
         api = MediaWikiApiMock()
         integration = MediaWikiIntegration(api)
         
-        api.query_revisions_by_ids_resp = {
-            "pages": {
-                "123": {
-                    "pageid": 123,
-                    "ns": 0,
-                    "title": "Test title",
-                    "revisions": [
-                        SAMPLE_REVISION_REGISTERED_USER_RAW
-                    ]
-                }
+        api.query_revisions_by_ids_resp = [
+            {
+                "pageid": 123,
+                "ns": 0,
+                "title": "Test title",
+                "revisions": [
+                    SAMPLE_REVISION_REGISTERED_USER_RAW
+                ]
             }
-        }
+        ]
 
         try:
             instance = integration.load_single_revision_instance(1)
@@ -109,13 +108,7 @@ class TestMediaWikiIntegration(unittest.TestCase):
         api = MediaWikiApiMock()
         integration = MediaWikiIntegration(api)
         
-        api.query_revisions_by_ids_resp = {
-            "badrevids": {
-                "12345": {
-                    "revid": 12345
-                }
-            }
-        }
+        api.query_revisions_by_ids_resp = []
 
         with self.assertRaises(BadRevisionIdException):
             integration.load_single_revision_instance(1)

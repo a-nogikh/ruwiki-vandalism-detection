@@ -1,5 +1,6 @@
 import dateutil.parser
 from injector import inject
+from typing import Iterator
 from .api import MediaWikiApi
 from models import Instance, Revision, Page, RegisteredUser, Guest
 
@@ -35,16 +36,19 @@ class MediaWikiIntegration:
     def __init__(self, api: MediaWikiApi):
         self.api = api
 
+    def load_group_members(self, group_name: str) -> Iterator[RegisteredUser]:
+        for raw in self.api.query_users_for_group(group_name):
+            yield RegisteredUser(
+                user_id=int(raw["userid"]),
+                user_name=str(raw["name"]))
+        
     def load_single_revision_instance(self, rev_id: int) -> Instance:
         attrs = ['ids', 'timestamp', 'user', 'userid', 'comment', 'flags']
-        response = self.api.query_revisions_by_ids([rev_id], attrs)
-        if "badrevids" in response:
+        response = list(self.api.query_revisions_by_ids([rev_id], attrs))
+        if len(response) == 0:
             raise BadRevisionIdException()
 
-        page_raw = next((response["pages"][x] for x in response["pages"].keys()), None)
-        if page_raw is None:
-            raise BadRevisionIdException()
-            
+        page_raw = response[0]
         page = MediaWikiObjectConversion.convert_page(page_raw)
 
         instance = Instance(page, rev_id)
