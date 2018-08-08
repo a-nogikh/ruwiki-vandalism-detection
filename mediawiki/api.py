@@ -1,5 +1,10 @@
 import requests
 import typing
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
+logging.basicConfig()
 
 
 class MediaWikiApiResourceInaccessible(Exception):
@@ -26,7 +31,8 @@ class MediaWikiApi:
             "action": "query",
             "format": "json",
             "list": "allusers",
-            "aulimit": 500
+            "aulimit": 500,
+            "augroup": group_name
         }, "allusers")
     
     def _get_all_query(self, params: dict, fetch_key: str) -> typing.Iterator[dict]:
@@ -36,10 +42,14 @@ class MediaWikiApi:
             query = response["query"]
             if fetch_key not in query:
                 return
-            
-            for key, x in query[fetch_key].items():
-                yield x
-            
+
+            if isinstance(query[fetch_key], dict):
+                for key, x in query[fetch_key].items():
+                    yield x
+            elif isinstance(query[fetch_key], list):
+                for x in query[fetch_key]:
+                    yield x
+                    
             if "continue" in response:
                 for key in response["continue"]:
                     if key != "continue":
@@ -51,6 +61,9 @@ class MediaWikiApi:
 
     def _get_query(self, params: dict) -> dict:
         try:
+            params_debug = ' '.join([str(k) + "=" + str(v) for k,v in params.items()])
+            logger.info("GET {}".format(params_debug))
+            
             r = requests.get(self.base_path, params)
             r.raise_for_status()
             

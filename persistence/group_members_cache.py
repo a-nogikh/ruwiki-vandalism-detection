@@ -20,14 +20,15 @@ class GroupMembersCache:
     # returns None if the required set does not exist
     @cachetools.cachedmethod(operator.attrgetter('func_cache'))
     def load_set(self, group_name) -> set:
-        loaded_flag = self.redis.get(GroupMembersCache.KEY_SET_PREFIX + group_name)
+        loaded_flag = self.redis.get(self.KEY_LOADED_FLAG_PREFIX + group_name)
         if not loaded_flag:
             return None
-        
-        return set(self.redis.smembers(GroupMembersCache.KEY_PREFIX + group_name))
+
+        set_generator = self.redis.smembers(self.KEY_SET_PREFIX + group_name)
+        return set(int(x) for x in set_generator)
 
     def save_set(self, group_name, group_members: set, expire_seconds: int):
-        key = GroupMembersCache.KEY_PREFIX + group_name
+        key = GroupMembersCache.KEY_SET_PREFIX + group_name
         self.redis.delete(key)
         self.redis.sadd(key, *group_members)
         self.redis.expire(key, expire_seconds)

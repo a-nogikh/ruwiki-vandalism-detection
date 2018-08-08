@@ -6,6 +6,7 @@ from persistence import GroupMembersCache
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 logging.basicConfig()
 
 class _UserGroupListsManager:
@@ -18,7 +19,7 @@ class _UserGroupListsManager:
         return res
     
 class UserGroupsFetcher:
-    GROUPS_OF_INTEREST=('autoreviewer', 'bot')
+    GROUPS_OF_INTEREST=('autoeditor', 'editor', 'bot')
     CACHE_TIME_SECONDS=3600*24
 
     @inject
@@ -32,7 +33,7 @@ class UserGroupsFetcher:
         user_groups = []
         for group in self.GROUPS_OF_INTEREST:
             if user_id in self._fetch_set_of_ids(group):
-                user_groups.append(user_id)
+                user_groups.append(group)
 
         return user_groups
 
@@ -43,6 +44,8 @@ class UserGroupsFetcher:
 
         logger.info("fetching members of {} group from API".format(group_name))
         from_api = _UserGroupListsManager.query_user_ids_set(group_name, self.api_integration)
-        logger.info("fetched {} membed of {} group, saving".format(len(from_api),group_name))
+        logger.info("fetched {} members of {} group, saving".format(len(from_api),group_name))
         
         self.cache.save_set(group_name, from_api, self.CACHE_TIME_SECONDS)
+
+        return from_api
