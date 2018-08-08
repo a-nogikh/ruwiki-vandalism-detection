@@ -3,7 +3,7 @@ import itertools
 import logging
 import random
 import time
-from dependencies import injector
+from dependencies import injector, injector_assisted
 from persistence.instance_collection import InstanceCollection
 from models import Instance
 from mediawiki import (MediaWikiIntegration,
@@ -66,7 +66,7 @@ def get_command():
     @click.option('--include-guests/--exclude-guests', default=True)
     def gen_raw_dataset(collection_name, rev_start, rev_end, count, include_bots, include_guests):
         api_integration = injector.get(MediaWikiIntegration)
-        collection = InstanceCollection(collection_name)
+        collection = injector_assisted(InstanceCollection).build(name=collection_name)
 
         used_revisions = set()
         for x in collection.query_all():

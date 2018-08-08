@@ -1,7 +1,6 @@
 from .mongodb.mongo_mapper import MongoMapper, MongoObjectMapper
 from models import Instance, Page, Revision, User, Guest, RegisteredUser
-from dependencies import injector
-from injector import ClassAssistedBuilder
+from injector import ClassAssistedBuilder, inject
 from typing import Iterator
 import dateutil.parser
 
@@ -101,10 +100,11 @@ class InstanceObjectMapper(MongoObjectMapper):
 
 
 class InstanceCollection:
-    def __init__(self, name: str):
-        builder = injector.get(ClassAssistedBuilder[MongoMapper])
+    @inject
+    def __init__(self, name: str, builder: ClassAssistedBuilder[MongoMapper]):
         self.mapper = builder.build(collection_name=name,
                                     object_mapper=InstanceObjectMapper) # type: MongoMapper
+
     def query_all(self) -> Iterator[Instance]:
         return self.mapper.query({})
         

@@ -1,5 +1,5 @@
 from redis import StrictRedis
-from injector import Injector, Module, provider, singleton
+from injector import Injector, Module, provider, singleton, ClassAssistedBuilder
 from pymongo import MongoClient, database
 from mediawiki import MediaWikiApi, MediaWikiIntegration
 from persistence import GroupMembersCache
@@ -45,3 +45,6 @@ class ServicesModule(Module):
 
     
 injector = Injector([MediaWikiModule, PersistenceModule, ServicesModule])
+
+def injector_assisted(t):
+    return injector.get(ClassAssistedBuilder[t])
