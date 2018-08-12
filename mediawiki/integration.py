@@ -1,4 +1,5 @@
 import dateutil.parser
+import itertools
 from injector import inject
 from typing import Iterator
 from .api import MediaWikiApi
@@ -32,6 +33,8 @@ class BadRevisionIdException(Exception):
     pass
 
 class MediaWikiIntegration:
+    REVISION_PROPERTIES = ['ids', 'timestamp', 'user', 'userid', 'comment', 'flags']
+
     @inject
     def __init__(self, api: MediaWikiApi):
         self.api = api
@@ -43,8 +46,7 @@ class MediaWikiIntegration:
                 user_name=str(raw["name"]))
         
     def load_single_revision_instance(self, rev_id: int) -> Instance:
-        attrs = ['ids', 'timestamp', 'user', 'userid', 'comment', 'flags']
-        response = list(self.api.query_revisions_by_ids([rev_id], attrs))
+        response = list(self.api.query_revisions_by_ids([rev_id], self.REVISION_PROPERTIES))
         if len(response) == 0:
             raise BadRevisionIdException()
 
@@ -57,3 +59,15 @@ class MediaWikiIntegration:
         ])
 
         return instance
+
+    def load_revisions_into_instance(self, instance: Instance, count: int):
+        response = self.api.query_revisions_for_page(
+            page_id=instance.page.page_id,
+            rvprop=self.REVISION_PROPERTIES,
+            revs_limit=count)
+
+        response_list = list(itertools.islice(response, count))
+        instance.revisions.replace([
+            MediaWikiObjectConversion.convert_revision(x) for x in response_list
+        ])
+        

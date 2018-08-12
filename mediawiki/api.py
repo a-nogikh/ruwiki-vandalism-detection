@@ -17,12 +17,23 @@ class MediaWikiApi:
     def __init__(self, base_path: str):
         self.base_path = base_path
 
-    def query_revisions_by_ids(self, page_ids: int, rvprop: list):
+    def query_revisions_for_page(self, page_id: int, rvprop: list, revs_limit: int):
         return self._get_all_query({
             "action": "query",
             "format": "json",
             "prop": "revisions",
-            "revids": "|".join(str(x) for x in page_ids),
+            "pageids": page_id,
+            "rvdir": "older",
+            "rvlimit": revs_limit,
+            "rvprop": "|".join(str(x) for x in rvprop)
+        }, "pages", str(page_id), "revisions")
+
+    def query_revisions_by_ids(self, rev_ids: int, rvprop: list):
+        return self._get_all_query({
+            "action": "query",
+            "format": "json",
+            "prop": "revisions",
+            "revids": "|".join(str(x) for x in rev_ids),
             "rvprop": "|".join(str(x) for x in rvprop)
         }, "pages")
 
@@ -34,20 +45,23 @@ class MediaWikiApi:
             "aulimit": 500,
             "augroup": group_name
         }, "allusers")
-    
-    def _get_all_query(self, params: dict, fetch_key: str) -> typing.Iterator[dict]:
+
+    def _get_all_query(self, params: dict, *fetch_key: str) -> typing.Iterator[dict]:
         query_params = params.copy()
         while True:
             response = self._get_query(query_params)
             query = response["query"]
-            if fetch_key not in query:
-                return
+            try:
+                for x in fetch_key:
+                    query = query[x]
+            except:
+                return # key not found
 
-            if isinstance(query[fetch_key], dict):
-                for key, x in query[fetch_key].items():
+            if isinstance(query, dict):
+                for key, x in query.items():
                     yield x
-            elif isinstance(query[fetch_key], list):
-                for x in query[fetch_key]:
+            elif isinstance(query, list):
+                for x in query:
                     yield x
                     
             if "continue" in response:
