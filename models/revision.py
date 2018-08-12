@@ -13,6 +13,11 @@ class RegisteredUser(User):
     def __eq__(self, other):
         return self.user_id == other.user_id
 
+    def __repr__(self):
+        return "RegisteredUser(user_id: {!r}, user_name: {!r})".format(
+            self.user_id,
+            self.user_name)
+
 
 class Guest(User):
     def __init__(self, ip: str):
@@ -21,6 +26,9 @@ class Guest(User):
     def __eq__(self, other):
         return self.ip == other.ip
 
+    def __repr__(self):
+        return "Guest(ip: {!r})".format(self.ip)
+    
 
 class Revision:
     def __init__(self,
@@ -44,3 +52,10 @@ class Revision:
             and self.comment == other.comment \
             and self.is_minor == other.is_minor \
             and self.is_reviewed == other.is_reviewed
+
+    def __repr__(self):
+        return "Revision(rev_id: {!r}, user: {!r}, timestamp: {!r}, comment: {!r})".format(
+            self.rev_id,
+            self.user,
+            self.timestamp,
+            self.comment)

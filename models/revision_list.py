@@ -1,5 +1,6 @@
-from .revision import Revision
 from typing import List
+from operator import attrgetter
+from .revision import Revision
 
 
 class RevisionList:
@@ -7,8 +8,9 @@ class RevisionList:
         self.replace(revs)
 
     def replace(self, revs: List[Revision]):
-        self.revs = revs
-
+        self.revs = revs.copy()
+        self.revs.sort(key=attrgetter("timestamp"), reverse=True)
+        
     def __len__(self):
         return len(self.revs)
 
@@ -17,3 +19,6 @@ class RevisionList:
         
     def __iter__(self):
         return iter(self.revs)
+
+    def __repr__(self):
+        return "RevisionList({!r})".format(self.revs)
