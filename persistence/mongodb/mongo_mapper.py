@@ -1,5 +1,7 @@
 import pymongo
 import copy
+import pdb
+from bson import ObjectId
 from injector import inject
 
 
@@ -100,17 +102,19 @@ class MongoMapper:
         changes = []
         for obj in self.to_delete:
             if obj in self.id_to_object:
-                changes.append(pymongo.DeleteOne({"_id": self.id_to_object[obj]}))
+                changes.append(pymongo.DeleteOne({
+                    "_id": ObjectId(self.object_to_id[obj])
+                }))
                 self._forget_object(obj)
 
         for obj in self.to_insert:
             changes.append(pymongo.InsertOne(self.mapper.to_dict(obj)))
 
         for obj_id in self.id_to_object:
-            mongo_diff = _MongoObjectOperations.get_diff(self.id_to_copy[obj_id],
-                                                         self.id_to_object[obj_id])
+            new_dict = self.mapper.to_dict(self.id_to_object[obj_id])
+            mongo_diff = _MongoObjectOperations.get_diff(self.id_to_copy[obj_id], new_dict)
             if mongo_diff:
-                changes.append(pymongo.UpdateOne({'_id': obj_id}, mongo_diff))
+                changes.append(pymongo.UpdateOne({'_id': ObjectId(obj_id)}, mongo_diff))
 
         self.to_delete.clear()
         self.to_insert.clear()

@@ -2,7 +2,7 @@ import dateutil.parser
 from injector import inject
 from typing import Iterator
 from .api import MediaWikiApi
-from models import Instance, Revision, Page, RegisteredUser, Guest
+from models import Instance, Revision, Page, RegisteredUser, Guest, LabelingTask
 
 
 class MediaWikiObjectConversion:
@@ -72,3 +72,7 @@ class MediaWikiIntegration:
             MediaWikiObjectConversion.convert_revision(x) for x in response_list
         ])
         
+    def load_diff_for_labeling_task(self, task: LabelingTask) -> str:
+        resp = self.api.query_compare(task.rev_from, task.rev_to)
+        return resp["*"]
+    

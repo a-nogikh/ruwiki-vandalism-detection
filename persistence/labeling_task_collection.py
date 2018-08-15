@@ -12,7 +12,7 @@ class LabelingTaskObjectMapper(MongoObjectMapper):
         return LabelingTask(
             rev_from=int(raw["rev_from"]),
             rev_to=int(raw["rev_to"]),
-            tags=[str(x) for x in raw["rev_tags"]],
+            tags=[str(x) for x in raw["tags"]],
             labeled_at=parser.parse(raw["labeled_at"]) if raw["labeled_at"] is not None else None,
             cached_diff=raw["cached_diff"],
             cached_title=raw["cached_title"],

@@ -18,6 +18,15 @@ class MediaWikiApi:
     def __init__(self, base_path: str):
         self.base_path = base_path
 
+
+    def query_compare(self, from_rev: int, to_rev: int):
+        return self._get_query({
+            "format": "json",
+            "action": "compare",
+            "fromrev": from_rev,
+            "torev": to_rev
+        })["compare"]
+        
     def query_revisions_for_page(self,
                                  page_id: int,
                                  rev_from: int,
