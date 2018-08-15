@@ -1,6 +1,7 @@
 import requests
 import typing
 import logging
+import itertools
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -17,8 +18,12 @@ class MediaWikiApi:
     def __init__(self, base_path: str):
         self.base_path = base_path
 
-    def query_revisions_for_page(self, page_id: int, rvprop: list, revs_limit: int):
-        return self._get_all_query({
+    def query_revisions_for_page(self,
+                                 page_id: int,
+                                 rev_from: int,
+                                 rvprop: list,
+                                 revs_limit: int):
+        query = {
             "action": "query",
             "format": "json",
             "prop": "revisions",
@@ -26,7 +31,14 @@ class MediaWikiApi:
             "rvdir": "older",
             "rvlimit": revs_limit,
             "rvprop": "|".join(str(x) for x in rvprop)
-        }, "pages", str(page_id), "revisions")
+        }
+        
+        if rev_from is not None:
+            query.update({ "rvstartid": rev_from })
+
+        generator = self._get_all_query(query, "pages", str(page_id), "revisions")
+
+        return itertools.islice(generator, revs_limit)
 
     def query_revisions_by_ids(self, rev_ids: int, rvprop: list):
         return self._get_all_query({
@@ -56,7 +68,7 @@ class MediaWikiApi:
                     query = query[x]
             except:
                 return # key not found
-
+            
             if isinstance(query, dict):
                 for key, x in query.items():
                     yield x
@@ -71,7 +83,6 @@ class MediaWikiApi:
             else:
                 # We have queried everything
                 break
-                
 
     def _get_query(self, params: dict) -> dict:
         try:

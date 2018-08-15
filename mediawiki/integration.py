@@ -1,5 +1,4 @@
 import dateutil.parser
-import itertools
 from injector import inject
 from typing import Iterator
 from .api import MediaWikiApi
@@ -61,12 +60,14 @@ class MediaWikiIntegration:
         return instance
 
     def load_revisions_into_instance(self, instance: Instance, count: int):
+        last_rev = instance.revisions.get_last_revision()
         response = self.api.query_revisions_for_page(
             page_id=instance.page.page_id,
+            rev_from=None if last_rev is None else last_rev.rev_id,
             rvprop=self.REVISION_PROPERTIES,
             revs_limit=count)
 
-        response_list = list(itertools.islice(response, count))
+        response_list = list(response)
         instance.revisions.replace([
             MediaWikiObjectConversion.convert_revision(x) for x in response_list
         ])
