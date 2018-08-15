@@ -6,3 +6,4 @@ python-dateutil
 redis
 hiredis
 cachetools
+flask
