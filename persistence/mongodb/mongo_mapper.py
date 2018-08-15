@@ -104,7 +104,7 @@ class MongoMapper:
                 self._forget_object(obj)
 
         for obj in self.to_insert:
-            changes.append(pymongo.InsertOne(self.object_mapper.to_dict(obj)))
+            changes.append(pymongo.InsertOne(self.mapper.to_dict(obj)))
 
         for obj_id in self.id_to_object:
             mongo_diff = _MongoObjectOperations.get_diff(self.id_to_copy[obj_id],
@@ -133,14 +133,14 @@ class MongoMapper:
             del self.object_to_id[obj]
     
     def _convert_object(self, raw):
-        obj_id = raw["_id"].str
+        obj_id = str(raw["_id"])
         if obj_id in self.id_to_object:
             return self.id_to_object[obj_id]
 
         copied_obj = copy.deepcopy(raw)
         del copied_obj["_id"]
 
-        mapped_obj = self.object_mapper.from_dict(copied_obj)
+        mapped_obj = self.mapper.from_dict(copied_obj)
         self.id_to_object[obj_id] = mapped_obj
         self.id_to_copy[obj_id] = copied_obj
         self.object_to_id[mapped_obj] = obj_id
