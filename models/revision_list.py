@@ -10,6 +10,12 @@ class RevisionList:
     def replace(self, revs: List[Revision]):
         self.revs = revs.copy()
         self.revs.sort(key=attrgetter("timestamp"), reverse=True)
+
+    def get_last_revision(self) -> Revision:
+        if len(self.revs) > 0:
+            return self.revs[0]
+        else:
+            return None
         
     def __len__(self):
         return len(self.revs)

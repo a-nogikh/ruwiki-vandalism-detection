@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class User:
@@ -18,6 +18,9 @@ class RegisteredUser(User):
             self.user_id,
             self.user_name)
 
+    def __str__(self):
+        return self.user_name
+
 
 class Guest(User):
     def __init__(self, ip: str):
@@ -28,7 +31,10 @@ class Guest(User):
 
     def __repr__(self):
         return "Guest(ip: {!r})".format(self.ip)
-    
+
+    def __str__(self):
+        return self.ip
+
 
 class Revision:
     def __init__(self,
@@ -44,6 +50,9 @@ class Revision:
         self.comment = comment
         self.is_minor = is_minor
         self.is_reviewed = is_reviewed
+        
+    def timedelta_with(self, other: "Revision") -> timedelta:
+        return self.timestamp - other.timestamp
 
     def __eq__(self, other):
         return self.rev_id == other.rev_id \
